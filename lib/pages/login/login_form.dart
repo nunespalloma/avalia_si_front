@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';       // sobe um nível: lib/
-import '../widgets/email_field.dart';
-import '../widgets/password_field.dart';
-import '../widgets/login_button.dart';
+import '../../services/auth_service.dart';       // sobe um nível: lib/
+import '../../widgets/email_field.dart';
+import '../../widgets/password_field.dart';
+import '../../widgets/login_button.dart';
+import '../../pages/home/home_page.dart';
+import '../../widgets/error_message.dart';
 
 /// Formulário de login em si (possui estado)
 class LoginForm extends StatefulWidget {
@@ -22,6 +24,8 @@ class _LoginFormState extends State<LoginForm> {
 
   // instancia do serviço que chama o backend Ruby
   final AuthService _authService = AuthService();
+
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -45,27 +49,23 @@ class _LoginFormState extends State<LoginForm> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Login OK! Bem-vindo, ${resposta['email'] ?? email}',
-          ),
-        ),
-      );
+      // limpa mensagem de erro ao obter sucesso
+      setState(() {
+        _errorMessage = null;
+      });
 
-      // Exemplo de navegação pós-login:
-      // Navigator.pushReplacement(
-      //   context,
-      //   MaterialPageRoute(builder: (_) => const HomePage()),
-      // );
+      // Redireciona para HomePage
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro no login: $e'),
-        ),
-      );
+      // deixa mensagem fixa até o usuário fechar ou tentar novamente
+      setState(() {
+        _errorMessage = "E-mail ou senha incorretos. Tente novamente.";
+      });
     } finally {
       if (!mounted) return;
       setState(() {
@@ -101,6 +101,15 @@ class _LoginFormState extends State<LoginForm> {
             carregando: _carregando,
             onPressed: _enviar,
           ),
+          if (_errorMessage != null) 
+            ErrorMessage(
+              message: _errorMessage!,
+              onClose: () {
+                setState(() {
+                  _errorMessage = null;
+                });
+              },
+            ),
         ],
       ),
     );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'services/auth_service.dart';       // caso precise em outros lugares depois
-import 'pages/login_page.dart';   // nossa tela de login
+import 'pages/login/login_page.dart';   // nossa tela de login
 
 void main() {
   runApp(const MyApp());
