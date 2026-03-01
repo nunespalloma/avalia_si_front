@@ -1,6 +1,6 @@
+// lib/widgets/password_field.dart
 import 'package:flutter/material.dart';
 
-/// Campo de senha como componente (stateless, recebe estado por props)
 class PasswordField extends StatelessWidget {
   final TextEditingController controller;
   final bool senhaVisivel;
@@ -19,7 +19,13 @@ class PasswordField extends StatelessWidget {
       controller: controller,
       decoration: InputDecoration(
         labelText: 'Senha',
-        border: const OutlineInputBorder(),
+        border: const UnderlineInputBorder(),
+        enabledBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.grey),
+        ),
+        focusedBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.black),
+        ),
         suffixIcon: IconButton(
           icon: Icon(
             senhaVisivel ? Icons.visibility_off : Icons.visibility,

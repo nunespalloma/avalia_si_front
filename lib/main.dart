@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'services/auth_service.dart';       // caso precise em outros lugares depois
-import 'pages/login/login_page.dart';   // nossa tela de login
+import 'pages/welcome/welcome_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,13 +12,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Login Demo',
+      title: 'AvaliaSI',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.black),
         useMaterial3: true,
       ),
-      home: const LoginPage(),
+      home: const WelcomePage(),
     );
   }
 }

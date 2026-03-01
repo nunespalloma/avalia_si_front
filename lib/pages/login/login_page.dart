@@ -1,21 +1,44 @@
 import 'package:flutter/material.dart';
-import 'login_form.dart'; // está na mesma pasta: pages/
+import 'login_form.dart';
 
-/// Tela (page) que cuida só do Scaffold e estrutura geral
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-        centerTitle: true,
-      ),
-      body: const Center(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(24.0),
-          child: LoginForm(), // componente com o formulário
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Botão de voltar
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
+              ),
+              const SizedBox(height: 16),
+
+              // Título grande
+              const Text(
+                'É bom\nter você\npor aqui!',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w500,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(height: 40),
+
+              // Formulário de login
+              const Expanded(
+                child: SingleChildScrollView(
+                  child: LoginForm(),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

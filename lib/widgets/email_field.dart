@@ -1,6 +1,6 @@
+// lib/widgets/email_field.dart
 import 'package:flutter/material.dart';
 
-/// Campo de e-mail como componente reaproveitável
 class EmailField extends StatelessWidget {
   final TextEditingController controller;
 
@@ -14,8 +14,14 @@ class EmailField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       decoration: const InputDecoration(
-        labelText: 'E-mail',
-        border: OutlineInputBorder(),
+        labelText: 'E-mail UFF',
+        border: UnderlineInputBorder(),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.grey),
+        ),
+        focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.black),
+        ),
       ),
       keyboardType: TextInputType.emailAddress,
       validator: (value) {

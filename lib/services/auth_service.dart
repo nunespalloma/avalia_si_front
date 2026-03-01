@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  final String baseUrl = 'http://10.0.2.2:3000'; //Emulador Android falando com backend no PC
+  //final String baseUrl = 'http://10.0.2.2:3000'; //Emulador Android falando com backend no PC
+  final String baseUrl = 'http://localhost:3000'; //Chrome falando com backend no PC
 
   Future<Map<String, dynamic>> login(String email, String senha) async {
     final url = Uri.parse('$baseUrl/login');// http://localhost:3000/login

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../services/auth_service.dart';       // sobe um nível: lib/
+
+import '../../services/auth_service.dart';
 import '../../widgets/email_field.dart';
 import '../../widgets/password_field.dart';
 import '../../widgets/login_button.dart';
-import '../../pages/home/home_page.dart';
 import '../../widgets/error_message.dart';
+import '../home/home_page.dart';
 
-/// Formulário de login em si (possui estado)
 class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
 
@@ -21,11 +21,9 @@ class _LoginFormState extends State<LoginForm> {
 
   bool _senhaVisivel = false;
   bool _carregando = false;
-
-  // instancia do serviço que chama o backend Ruby
-  final AuthService _authService = AuthService();
-
   String? _errorMessage;
+
+  final AuthService _authService = AuthService();
 
   @override
   void dispose() {
@@ -46,31 +44,25 @@ class _LoginFormState extends State<LoginForm> {
 
     try {
       final resposta = await _authService.login(email, senha);
-
       if (!mounted) return;
 
-      // limpa mensagem de erro ao obter sucesso
       setState(() {
-        _errorMessage = null;
+        _errorMessage = null; // limpa erro no sucesso
       });
 
-      // Redireciona para HomePage
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomePage()),
       );
     } catch (e) {
       if (!mounted) return;
-
-      // deixa mensagem fixa até o usuário fechar ou tentar novamente
       setState(() {
-        _errorMessage = "E-mail ou senha incorretos. Tente novamente.";
+        _errorMessage = 'E-mail ou senha incorretos. Tente novamente.';
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _carregando = false;
-      });
+      if (mounted) {
+        setState(() => _carregando = false);
+      }
     }
   }
 
@@ -85,23 +77,48 @@ class _LoginFormState extends State<LoginForm> {
     return Form(
       key: _formKey,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          EmailField(
-            controller: _emailController,
-          ),
+          EmailField(controller: _emailController),
           const SizedBox(height: 16),
           PasswordField(
             controller: _senhaController,
             senhaVisivel: _senhaVisivel,
             onToggleSenhaVisivel: _toggleSenhaVisivel,
           ),
+
+          // "Esqueceu a senha?" alinhado à direita
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () {
+                // TODO: fluxo de recuperação de senha
+              },
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                'Esqueceu a senha?',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.blue,
+                ),
+              ),
+            ),
+          ),
+
           const SizedBox(height: 24),
+
           LoginButton(
             carregando: _carregando,
             onPressed: _enviar,
           ),
-          if (_errorMessage != null) 
+
+          // Mensagem de erro abaixo do botão
+          if (_errorMessage != null)
             ErrorMessage(
               message: _errorMessage!,
               onClose: () {
