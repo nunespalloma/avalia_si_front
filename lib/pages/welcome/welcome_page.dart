@@ -26,7 +26,7 @@ class WelcomePage extends StatelessWidget {
                         'AvaliaSI',
                         style: TextStyle(
                           fontFamily: 'Michroma',
-                          fontSize: 32,
+                          fontSize: 42,
                           fontWeight: FontWeight.w500,
                         ),
                       ),

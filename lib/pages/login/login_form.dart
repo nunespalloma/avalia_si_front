@@ -1,94 +1,48 @@
 import 'package:flutter/material.dart';
 
-import '../../services/auth_service.dart';
 import '../../widgets/email_field.dart';
 import '../../widgets/password_field.dart';
-import '../../widgets/login_button.dart';
 import '../../widgets/error_message.dart';
-import '../home/home_page.dart';
 
-class LoginForm extends StatefulWidget {
-  const LoginForm({super.key});
+class LoginForm extends StatelessWidget {
+  final GlobalKey<FormState> formKey;
+  final TextEditingController emailController;
+  final TextEditingController senhaController;
+  final bool senhaVisivel;
+  final String? errorMessage;
+  final VoidCallback onToggleSenhaVisivel;
+  final VoidCallback onCloseError;
 
-  @override
-  State<LoginForm> createState() => _LoginFormState();
-}
-
-class _LoginFormState extends State<LoginForm> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _senhaController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-
-  bool _senhaVisivel = false;
-  bool _carregando = false;
-  String? _errorMessage;
-
-  final AuthService _authService = AuthService();
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _senhaController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _enviar() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final email = _emailController.text.trim();
-    final senha = _senhaController.text;
-
-    setState(() {
-      _carregando = true;
-    });
-
-    try {
-      final resposta = await _authService.login(email, senha);
-      if (!mounted) return;
-
-      setState(() {
-        _errorMessage = null; // limpa erro no sucesso
-      });
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = 'E-mail ou senha incorretos. Tente novamente.';
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _carregando = false);
-      }
-    }
-  }
-
-  void _toggleSenhaVisivel() {
-    setState(() {
-      _senhaVisivel = !_senhaVisivel;
-    });
-  }
+  const LoginForm({
+    super.key,
+    required this.formKey,
+    required this.emailController,
+    required this.senhaController,
+    required this.senhaVisivel,
+    required this.errorMessage,
+    required this.onToggleSenhaVisivel,
+    required this.onCloseError,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Form(
-      key: _formKey,
+      key: formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          EmailField(controller: _emailController),
+          EmailField(controller: emailController),
           const SizedBox(height: 16),
+
           PasswordField(
-            controller: _senhaController,
-            senhaVisivel: _senhaVisivel,
-            onToggleSenhaVisivel: _toggleSenhaVisivel,
+            controller: senhaController,
+            senhaVisivel: senhaVisivel,
+            onToggleSenhaVisivel: onToggleSenhaVisivel,
           ),
 
-          // "Esqueceu a senha?" alinhado à direita
+          const SizedBox(height: 12),
+
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
@@ -110,22 +64,12 @@ class _LoginFormState extends State<LoginForm> {
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
-          LoginButton(
-            carregando: _carregando,
-            onPressed: _enviar,
-          ),
-
-          // Mensagem de erro abaixo do botão
-          if (_errorMessage != null)
+          if (errorMessage != null)
             ErrorMessage(
-              message: _errorMessage!,
-              onClose: () {
-                setState(() {
-                  _errorMessage = null;
-                });
-              },
+              message: errorMessage!,
+              onClose: onCloseError,
             ),
         ],
       ),
