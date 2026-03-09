@@ -85,7 +85,7 @@ class _LoginPageState extends State<LoginPage> {
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => Navigator.pop(context),
               ),
-              const SizedBox(height: 70),
+              const SizedBox(height: 80),
 
               const Center(
                 child: Text(

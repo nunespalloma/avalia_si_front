@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../login/login_page.dart';
+import '../signup/signup_page.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
@@ -74,7 +75,10 @@ class WelcomePage extends StatelessWidget {
                   width: double.infinity,
                   child: OutlinedButton(
                     onPressed: () {
-                      // TODO: Navegar para tela de cadastro
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SignUpPage()),
+                      );
                     },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.black,
