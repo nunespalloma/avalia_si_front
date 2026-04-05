@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/success_popup.dart';
 import '../../widgets/logout_popup.dart';
 import '../welcome/welcome_page.dart';
+import '../evaluation/provide_evaluation_page.dart';
 
 class HomePage extends StatelessWidget {
   final String? mensagemSucesso;
@@ -144,7 +145,12 @@ class HomePage extends StatelessWidget {
                     if (jaAvaliouUltimoSemestre) {
                       // TODO: navegar para a tela de avaliações
                     } else {
-                      // TODO: navegar para a tela de fornecer avaliação
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ProvideEvaluationPage(),
+                        ),
+                      );
                     }
                   },
                   style: ElevatedButton.styleFrom(
