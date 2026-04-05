@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
 import '../login/login_page.dart';
 import '../signup/signup_page.dart';
+import '../../widgets/success_popup.dart';
 
 class WelcomePage extends StatelessWidget {
-  const WelcomePage({super.key});
+  final String? mensagemSucesso;
+
+  const WelcomePage({super.key, this.mensagemSucesso});
 
   @override
   Widget build(BuildContext context) {
+    if (mensagemSucesso != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        showTopMessageBanner(
+          context,
+          message: mensagemSucesso!,
+        );
+      });
+    }
     return Scaffold(
       body: SafeArea(
         child: Center(

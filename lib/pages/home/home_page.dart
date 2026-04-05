@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/success_popup.dart';
+import '../../widgets/logout_popup.dart';
+import '../welcome/welcome_page.dart';
 
 class HomePage extends StatelessWidget {
   final String? mensagemSucesso;
@@ -71,7 +73,20 @@ class HomePage extends StatelessWidget {
                       color: Colors.black,
                     ),
                     onPressed: () {
-                      Navigator.popUntil(context, (route) => route.isFirst);
+                      showLogoutPopup(
+                        context,
+                        onConfirm: () {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const WelcomePage(
+                                mensagemSucesso: 'Saiu com sucesso!',
+                              ),
+                            ),
+                            (route) => false,
+                          );
+                        },
+                      );
                     },
                   ),
                 ],
