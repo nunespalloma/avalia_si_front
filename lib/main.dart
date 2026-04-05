@@ -15,6 +15,7 @@ class MyApp extends StatelessWidget {
       title: 'AvaliaSI',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        fontFamily: 'Michroma',
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.black),
         useMaterial3: true,
       ),
