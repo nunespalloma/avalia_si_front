@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class SignUpForm extends StatelessWidget {
   final GlobalKey<FormState> formKey;
+  final TextEditingController nomeController;
   final TextEditingController emailController;
   final TextEditingController matriculaController;
   final TextEditingController senhaController;
@@ -14,6 +15,7 @@ class SignUpForm extends StatelessWidget {
   const SignUpForm({
     super.key,
     required this.formKey,
+    required this.nomeController,
     required this.emailController,
     required this.matriculaController,
     required this.senhaController,
@@ -29,7 +31,6 @@ class SignUpForm extends StatelessWidget {
       labelText: label,
       floatingLabelBehavior: FloatingLabelBehavior.auto,
       alignLabelWithHint: false,
-
       labelStyle: const TextStyle(
         color: Colors.black45,
         fontSize: 14,
@@ -38,7 +39,6 @@ class SignUpForm extends StatelessWidget {
         color: Colors.black54,
         fontSize: 14,
       ),
-
       contentPadding: const EdgeInsets.only(top: 8, bottom: 8),
       enabledBorder: const UnderlineInputBorder(
         borderSide: BorderSide(color: Colors.black26),
@@ -62,6 +62,19 @@ class SignUpForm extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          TextFormField(
+            controller: nomeController,
+            cursorColor: Colors.black,
+            decoration: buildDecoration('Nome'),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Informe seu nome';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 24),
+
           TextFormField(
             controller: emailController,
             keyboardType: TextInputType.emailAddress,

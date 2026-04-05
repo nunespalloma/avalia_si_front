@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'signup_form.dart';
 import '../../widgets/signup_button.dart';
+import '../../services/auth_service.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -12,17 +13,23 @@ class SignUpPage extends StatefulWidget {
 class _SignUpPageState extends State<SignUpPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
+  final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _matriculaController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
-  final TextEditingController _confirmarSenhaController =
-      TextEditingController();
+  final TextEditingController _confirmarSenhaController = TextEditingController();
+
+  final AuthService _authService = AuthService();
 
   bool _senhaVisivel = false;
   bool _confirmarSenhaVisivel = false;
 
+  bool _carregando = false;
+  String? _mensagemErro;
+
   @override
   void dispose() {
+    _nomeController.dispose();
     _emailController.dispose();
     _matriculaController.dispose();
     _senhaController.dispose();
@@ -42,10 +49,41 @@ class _SignUpPageState extends State<SignUpPage> {
     });
   }
 
-  void _cadastrar() {
-    if (_formKey.currentState!.validate()) {
-      debugPrint('Cadastro válido');
-      // TODO: implementar cadastro
+  Future<void> _cadastrar() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _carregando = true;
+      _mensagemErro = null;
+    });
+
+    try {
+      final mensagem = await _authService.cadastrar(
+        nome: _nomeController.text.trim(),
+        email: _emailController.text.trim(),
+        matricula: _matriculaController.text.trim(),
+        senha: _senhaController.text,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensagem)),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _mensagemErro = e.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (!mounted) return;
+
+      setState(() {
+        _carregando = false;
+      });
     }
   }
 
@@ -70,11 +108,9 @@ class _SignUpPageState extends State<SignUpPage> {
                   Navigator.pop(context);
                 },
               ),
-
               const SizedBox(height: 80),
-
               const Center(
-                child: const Padding(
+                child: Padding(
                   padding: EdgeInsets.only(left: 16),
                   child: Text(
                     'Seja\nbem-\nvindo(a)!',
@@ -86,11 +122,10 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ),
               ),
-
               const Spacer(),
-
               SignUpForm(
                 formKey: _formKey,
+                nomeController: _nomeController,
                 emailController: _emailController,
                 matriculaController: _matriculaController,
                 senhaController: _senhaController,
@@ -100,16 +135,19 @@ class _SignUpPageState extends State<SignUpPage> {
                 onToggleSenhaVisivel: _toggleSenhaVisivel,
                 onToggleConfirmarSenhaVisivel: _toggleConfirmarSenhaVisivel,
               ),
-
+              if (_mensagemErro != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _mensagemErro!,
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
               const Spacer(),
-
               SignUpButton(
-                onPressed: () {
-                  /*Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SignUpPage()),
-                  );*/
-                },
+                onPressed: _carregando ? () {} : _cadastrar,
               ),
               const SizedBox(height: 20),
             ],
