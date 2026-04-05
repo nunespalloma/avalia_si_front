@@ -56,7 +56,11 @@ class _LoginPageState extends State<LoginPage> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
+        MaterialPageRoute(
+          builder: (_) => const HomePage(
+            mensagemSucesso: "Login realizado com sucesso!",
+          ),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -93,7 +97,7 @@ class _LoginPageState extends State<LoginPage> {
                   Navigator.pop(context);
                 },
               ),
-              
+
               const SizedBox(height: 80),
 
               const Center(

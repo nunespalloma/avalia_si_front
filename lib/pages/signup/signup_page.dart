@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'signup_form.dart';
 import '../../widgets/signup_button.dart';
 import '../../services/auth_service.dart';
+import '../home/home_page.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -71,7 +72,14 @@ class _SignUpPageState extends State<SignUpPage> {
         SnackBar(content: Text(mensagem)),
       );
 
-      Navigator.pop(context);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const HomePage(
+            mensagemSucesso: "Cadastro realizado com sucesso!",
+          ),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
 
