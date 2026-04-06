@@ -45,6 +45,9 @@ class _ProvideEvaluationPageState extends State<ProvideEvaluationPage> {
     ),
   ];
 
+  bool get _todasAvaliadas =>
+      _turmasSemestreAnterior.every((item) => item.avaliada);
+
   Future<void> _abrirTelaAvaliacao(TurmaAvaliacao item) async {
     final avaliacaoEnviada = await Navigator.push<bool>(
       context,
@@ -66,6 +69,10 @@ class _ProvideEvaluationPageState extends State<ProvideEvaluationPage> {
         message: 'Avaliação enviada com sucesso!',
       );
     }
+  }
+
+  void _voltarParaHome() {
+    Navigator.pop(context, _todasAvaliadas);
   }
 
   @override
@@ -92,9 +99,7 @@ class _ProvideEvaluationPageState extends State<ProvideEvaluationPage> {
                   size: 24,
                   color: Colors.black,
                 ),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+                onPressed: _voltarParaHome,
               ),
 
               const SizedBox(height: 24),
@@ -161,6 +166,32 @@ class _ProvideEvaluationPageState extends State<ProvideEvaluationPage> {
                   ),
                 ),
               ),
+
+              if (_todasAvaliadas) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _voltarParaHome,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    child: const Text(
+                      'Voltar para início',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
 
               const SizedBox(height: 20),
             ],

@@ -4,7 +4,7 @@ import '../../widgets/logout_popup.dart';
 import '../welcome/welcome_page.dart';
 import '../evaluation/provide_evaluation_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   final String? mensagemSucesso;
   final bool jaAvaliouUltimoSemestre;
 
@@ -15,33 +15,65 @@ class HomePage extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    if (mensagemSucesso != null) {
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  late bool _jaAvaliouUltimoSemestre;
+  bool _mensagemJaExibida = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _jaAvaliouUltimoSemestre = widget.jaAvaliouUltimoSemestre;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_mensagemJaExibida && widget.mensagemSucesso != null) {
+      _mensagemJaExibida = true;
+
       WidgetsBinding.instance.addPostFrameCallback((_) {
         showTopMessageBanner(
           context,
-          message: mensagemSucesso!,
+          message: widget.mensagemSucesso!,
         );
       });
     }
+  }
 
-    final String titulo =
-        jaAvaliouUltimoSemestre ? 'Parabéns,' : 'Poxa,';
+  Future<void> _abrirTelaFornecerAvaliacao() async {
+    final concluiuTodas = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ProvideEvaluationPage(),
+      ),
+    );
 
-    final String subtitulo =
-        jaAvaliouUltimoSemestre
-            ? 'você já avaliou o\núltimo semestre...'
-            : 'parece que você\nainda não avaliou o\núltimo semestre...';
+    if (concluiuTodas == true) {
+      setState(() {
+        _jaAvaliouUltimoSemestre = true;
+      });
+    }
+  }
 
-    final String descricao =
-        jaAvaliouUltimoSemestre
-            ? 'Verifique as avaliações atualizadas de outros alunos neste semestre.'
-            : 'Realize sua avaliação para ter acesso às avaliações atualizadas de outros alunos neste semestre.';
+  @override
+  Widget build(BuildContext context) {
+    final String titulo = _jaAvaliouUltimoSemestre ? 'Parabéns,' : 'Poxa,';
 
-    final String textoBotao =
-        jaAvaliouUltimoSemestre
-            ? 'Verificar Avaliações'
-            : 'Fornecer Avaliação';
+    final String subtitulo = _jaAvaliouUltimoSemestre
+        ? 'você já avaliou o\núltimo semestre...'
+        : 'parece que você\nainda não avaliou o\núltimo semestre...';
+
+    final String descricao = _jaAvaliouUltimoSemestre
+        ? 'Verifique as avaliações atualizadas de outros alunos neste semestre.'
+        : 'Realize sua avaliação para ter acesso às avaliações atualizadas de outros alunos neste semestre.';
+
+    final String textoBotao = _jaAvaliouUltimoSemestre
+        ? 'Verificar Avaliações'
+        : 'Fornecer Avaliação';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -141,16 +173,11 @@ class HomePage extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (jaAvaliouUltimoSemestre) {
+                  onPressed: () async {
+                    if (_jaAvaliouUltimoSemestre) {
                       // TODO: navegar para a tela de avaliações
                     } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ProvideEvaluationPage(),
-                        ),
-                      );
+                      await _abrirTelaFornecerAvaliacao();
                     }
                   },
                   style: ElevatedButton.styleFrom(
