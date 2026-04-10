@@ -3,6 +3,7 @@ import '../../widgets/success_popup.dart';
 import '../../widgets/logout_popup.dart';
 import '../welcome/welcome_page.dart';
 import '../evaluation/provide_evaluation_page.dart';
+import '../evaluation/view_evaluation_page.dart';
 
 class HomePage extends StatefulWidget {
   final String? mensagemSucesso;
@@ -57,6 +58,15 @@ class _HomePageState extends State<HomePage> {
         _jaAvaliouUltimoSemestre = true;
       });
     }
+  }
+
+  void _abrirTelaAvaliacoes() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ViewEvaluationPage(),
+      ),
+    );
   }
 
   @override
@@ -175,7 +185,7 @@ class _HomePageState extends State<HomePage> {
                 child: ElevatedButton(
                   onPressed: () async {
                     if (_jaAvaliouUltimoSemestre) {
-                      // TODO: navegar para a tela de avaliações
+                      _abrirTelaAvaliacoes();
                     } else {
                       await _abrirTelaFornecerAvaliacao();
                     }
