@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../widgets/logout_popup.dart';
-import '../welcome/welcome_page.dart';
 import 'widgets/evaluation_comment_card.dart';
 
 class EvaluationDashboardPage extends StatefulWidget {
@@ -63,6 +61,14 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage> {
 
   String _notaFormatada() {
     return _notaEstrelas.toStringAsFixed(1);
+  }
+
+  String _textoAvaliacaoGeral() {
+    if (_notaEstrelas <= 1) return 'Muito ruim';
+    if (_notaEstrelas <= 2) return 'Ruim';
+    if (_notaEstrelas <= 3) return 'Razoável';
+    if (_notaEstrelas <= 4) return 'Boa';
+    return 'Excelente';
   }
 
   String _valorParaTexto(
@@ -153,7 +159,6 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage> {
           child: Column(
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
                     padding: EdgeInsets.zero,
@@ -165,31 +170,6 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage> {
                     ),
                     onPressed: () {
                       Navigator.pop(context);
-                    },
-                  ),
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    icon: const Icon(
-                      Icons.logout,
-                      size: 28,
-                      color: Colors.black,
-                    ),
-                    onPressed: () {
-                      showLogoutPopup(
-                        context,
-                        onConfirm: () {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const WelcomePage(
-                                mensagemSucesso: 'Saiu com sucesso!',
-                              ),
-                            ),
-                            (route) => false,
-                          );
-                        },
-                      );
                     },
                   ),
                 ],
@@ -256,6 +236,15 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage> {
                                 fontSize: 26,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              _textoAvaliacaoGeral(),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                             const SizedBox(height: 6),

@@ -16,6 +16,8 @@ class EvaluationFormPage extends StatefulWidget {
 }
 
 class _EvaluationFormPageState extends State<EvaluationFormPage> {
+  int avaliacaoGeral = 4;
+
   double organizacaoConteudo = 2;
   double quantidadeExercicios = 1;
   double avaliacaoCondizente = 2;
@@ -29,6 +31,89 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
   void dispose() {
     comentarioController.dispose();
     super.dispose();
+  }
+
+  String _textoAvaliacaoGeral() {
+    switch (avaliacaoGeral) {
+      case 1:
+        return 'Muito ruim';
+      case 2:
+        return 'Ruim';
+      case 3:
+        return 'Razoável';
+      case 4:
+        return 'Boa';
+      case 5:
+        return 'Excelente';
+      default:
+        return '';
+    }
+  }
+
+  Widget _buildStarRating() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.black12),
+      ),
+      child: Column(
+        children: [
+          const Text(
+            'Avaliação geral',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Como foi sua experiência geral nessa turma?',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.black54,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (index) {
+              final estrela = index + 1;
+
+              return IconButton(
+                onPressed: () {
+                  setState(() {
+                    avaliacaoGeral = estrela;
+                  });
+                },
+                splashRadius: 22,
+                icon: Icon(
+                  estrela <= avaliacaoGeral
+                      ? Icons.star_rounded
+                      : Icons.star_border_rounded,
+                  size: 34,
+                  color: Colors.black,
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '$avaliacaoGeral/5 - ${_textoAvaliacaoGeral()}',
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.black87,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -85,6 +170,9 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
+                      _buildStarRating(),
+                      const SizedBox(height: 26),
+
                       EvaluationSliderItem(
                         titulo: 'Organização do conteúdo:',
                         valor: organizacaoConteudo,
