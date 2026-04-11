@@ -21,6 +21,9 @@ class ViewEvaluationPage extends StatefulWidget {
 }
 
 class _ViewEvaluationPageState extends State<ViewEvaluationPage> {
+  final TextEditingController _buscaController = TextEditingController();
+  String _termoBusca = '';
+
   final List<TurmaResultado> _turmasAvaliadas = [
     TurmaResultado(
       disciplina: 'Algoritmos e Programação',
@@ -39,6 +42,12 @@ class _ViewEvaluationPageState extends State<ViewEvaluationPage> {
     ),
   ];
 
+  @override
+  void dispose() {
+    _buscaController.dispose();
+    super.dispose();
+  }
+
   void _abrirDashboard(TurmaResultado item) {
     Navigator.push(
       context,
@@ -56,8 +65,24 @@ class _ViewEvaluationPageState extends State<ViewEvaluationPage> {
     Navigator.pop(context);
   }
 
+  List<TurmaResultado> get _turmasFiltradas {
+    if (_termoBusca.trim().isEmpty) {
+      return _turmasAvaliadas;
+    }
+
+    final busca = _termoBusca.toLowerCase();
+
+    return _turmasAvaliadas.where((item) {
+      return item.disciplina.toLowerCase().contains(busca) ||
+          item.turma.toLowerCase().contains(busca) ||
+          item.professor.toLowerCase().contains(busca);
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final turmasExibidas = _turmasFiltradas;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
@@ -104,7 +129,69 @@ class _ViewEvaluationPageState extends State<ViewEvaluationPage> {
                 ),
               ),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
+
+              TextField(
+                controller: _buscaController,
+                onChanged: (value) {
+                  setState(() {
+                    _termoBusca = value;
+                  });
+                },
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white,
+                  hintText: 'Buscar disciplina, turma ou professor',
+                  hintStyle: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black38,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: Colors.black54,
+                    size: 20,
+                  ),
+                  suffixIcon: _termoBusca.isNotEmpty
+                      ? IconButton(
+                          onPressed: () {
+                            _buscaController.clear();
+                            setState(() {
+                              _termoBusca = '';
+                            });
+                          },
+                          icon: const Icon(
+                            Icons.close,
+                            color: Colors.black54,
+                            size: 20,
+                          ),
+                        )
+                      : null,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: Colors.black12,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: Colors.black12,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
 
               Expanded(
                 child: SingleChildScrollView(
@@ -112,16 +199,18 @@ class _ViewEvaluationPageState extends State<ViewEvaluationPage> {
                     children: [
                       _buildSectionTitle(
                         'Turmas disponíveis',
-                        _turmasAvaliadas.length,
+                        turmasExibidas.length,
                       ),
                       const SizedBox(height: 12),
 
-                      if (_turmasAvaliadas.isEmpty)
+                      if (turmasExibidas.isEmpty)
                         _buildEmptyState(
-                          'Você ainda não possui turmas avaliadas para visualizar.',
+                          _termoBusca.isEmpty
+                              ? 'Você ainda não possui turmas avaliadas para visualizar.'
+                              : 'Nenhuma turma encontrada para essa pesquisa.',
                         )
                       else
-                        ..._turmasAvaliadas.map(_buildTurmaCardResultado),
+                        ...turmasExibidas.map(_buildTurmaCardResultado),
                     ],
                   ),
                 ),
