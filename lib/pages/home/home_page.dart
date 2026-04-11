@@ -92,47 +92,33 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Column(
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new,
-                      size: 24,
-                      color: Colors.black,
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: const Icon(
+                    Icons.logout,
+                    size: 28,
+                    color: Colors.black,
                   ),
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    icon: const Icon(
-                      Icons.logout,
-                      size: 28,
-                      color: Colors.black,
-                    ),
-                    onPressed: () {
-                      showLogoutPopup(
-                        context,
-                        onConfirm: () {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const WelcomePage(
-                                mensagemSucesso: 'Saiu com sucesso!',
-                              ),
+                  onPressed: () {
+                    showLogoutPopup(
+                      context,
+                      onConfirm: () {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const WelcomePage(
+                              mensagemSucesso: 'Saiu com sucesso!',
                             ),
-                            (route) => false,
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ],
+                          ),
+                          (route) => false,
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
 
               const Spacer(),
