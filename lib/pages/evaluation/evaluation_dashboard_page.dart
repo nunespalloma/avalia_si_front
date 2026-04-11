@@ -178,7 +178,7 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage> {
               const SizedBox(height: 8),
 
               const Text(
-                'Dashboard',
+                'Resumo da Avaliação',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 28,
