@@ -78,6 +78,9 @@ flutter:
     - family: Michroma
       fonts:
         - asset: assets/fonts/Michroma-Regular.ttf
+    - family: DancingScript
+      fonts:
+        - asset: assets/fonts/DancingScript-Regular.ttf
   #       - asset: fonts/Schyler-Italic.ttf
   #         style: italic
   #   - family: Trajan Pro
