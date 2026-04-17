@@ -126,7 +126,7 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: const Color(0xFFF5F5F5),
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
             child: Column(
               children: [
                 Align(
@@ -219,7 +219,7 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
           child: Column(
             children: [
               Align(

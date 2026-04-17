@@ -155,7 +155,7 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage> {
       backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
           child: Column(
             children: [
               Row(
@@ -387,7 +387,7 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage> {
 
                         if (widget.comentarios.length > 2)
                           Padding(
-                            padding: const EdgeInsets.only(top: 4, bottom: 8),
+                            padding: const EdgeInsets.only(top: 4, bottom: 20),
                             child: SizedBox(
                               width: double.infinity,
                               child: OutlinedButton(
@@ -403,10 +403,10 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage> {
                                     color: Colors.black26,
                                   ),
                                   padding: const EdgeInsets.symmetric(
-                                    vertical: 14,
+                                    vertical: 16,
                                   ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
                                 ),
                                 child: Text(
