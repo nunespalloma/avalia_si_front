@@ -4,15 +4,19 @@ import '../../widgets/logout_popup.dart';
 import '../welcome/welcome_page.dart';
 import '../evaluation/provide_evaluation_page.dart';
 import '../evaluation/view_evaluation_page.dart';
+import '../coordenacao/import_csv_page.dart';
+import '../coordenacao/select_turma_professor_page.dart';
 
 class HomePage extends StatefulWidget {
   final String? mensagemSucesso;
   final bool jaAvaliouUltimoSemestre;
+  final bool isCoordenacao;
 
   const HomePage({
     super.key,
     this.mensagemSucesso,
     this.jaAvaliouUltimoSemestre = false,
+    this.isCoordenacao = false,
   });
 
   @override
@@ -69,8 +73,134 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _abrirTelaImportarCsv() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ImportCsvPage(),
+      ),
+    );
+  }
+
+  void _abrirTelaCadastrarProfessorNasTurmas() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SelectTurmaProfessorPage(),
+      ),
+    );
+  }
+
+  Widget _buildBotaoPrincipal({
+    required String texto,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(6),
+          ),
+        ),
+        child: Text(
+          texto,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (widget.isCoordenacao) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF5F5F5),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Column(
+              children: [
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(
+                      Icons.logout,
+                      size: 28,
+                      color: Colors.black,
+                    ),
+                    onPressed: () {
+                      showLogoutPopup(
+                        context,
+                        onConfirm: () {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const WelcomePage(
+                                mensagemSucesso: 'Saiu com sucesso!',
+                              ),
+                            ),
+                            (route) => false,
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+                const Spacer(),
+                const Column(
+                  children: [
+                    Text(
+                      'Olá,',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 1,
+                        color: Colors.black,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'você pode importar o CSV do semestre ou cadastrar os professores responsáveis pelas turmas.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 1,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                _buildBotaoPrincipal(
+                  texto: 'Importar CSV do semestre',
+                  onPressed: _abrirTelaImportarCsv,
+                ),
+                const SizedBox(height: 14),
+                _buildBotaoPrincipal(
+                  texto: 'Cadastrar professor nas turmas',
+                  onPressed: _abrirTelaCadastrarProfessorNasTurmas,
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final String titulo = _jaAvaliouUltimoSemestre ? 'Parabéns,' : 'Poxa,';
 
     final String subtitulo = _jaAvaliouUltimoSemestre
@@ -120,9 +250,7 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
               ),
-
               const Spacer(),
-
               Column(
                 children: [
                   Text(
@@ -147,9 +275,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 72),
-
               SizedBox(
                 width: 280,
                 child: Text(
@@ -163,38 +289,17 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
-
               const Spacer(),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    if (_jaAvaliouUltimoSemestre) {
-                      _abrirTelaAvaliacoes();
-                    } else {
-                      await _abrirTelaFornecerAvaliacao();
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  child: Text(
-                    textoBotao,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ),
+              _buildBotaoPrincipal(
+                texto: textoBotao,
+                onPressed: () async {
+                  if (_jaAvaliouUltimoSemestre) {
+                    _abrirTelaAvaliacoes();
+                  } else {
+                    await _abrirTelaFornecerAvaliacao();
+                  }
+                },
               ),
-
               const SizedBox(height: 20),
             ],
           ),

@@ -76,7 +76,8 @@ class _SignUpPageState extends State<SignUpPage> {
         context,
         MaterialPageRoute(
           builder: (_) => const HomePage(
-            mensagemSucesso: "Cadastro realizado com sucesso!",
+            mensagemSucesso: 'Cadastro realizado com sucesso!',
+            isCoordenacao: false,
           ),
         ),
       );

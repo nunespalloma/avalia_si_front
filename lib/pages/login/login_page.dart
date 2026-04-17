@@ -47,8 +47,12 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      await _authService.login(email, senha);
+      final response = await _authService.login(email, senha);
+
       if (!mounted) return;
+
+      final usuario = response['usuario'] as Map<String, dynamic>;
+      final bool isCoordenacao = usuario['is_coordenacao'] == true;
 
       setState(() {
         _errorMessage = null;
@@ -57,8 +61,9 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => const HomePage(
-            mensagemSucesso: "Login realizado com sucesso!",
+          builder: (_) => HomePage(
+            mensagemSucesso: 'Login realizado com sucesso!',
+            isCoordenacao: isCoordenacao,
           ),
         ),
       );
@@ -97,9 +102,7 @@ class _LoginPageState extends State<LoginPage> {
                   Navigator.pop(context);
                 },
               ),
-
               const SizedBox(height: 80),
-
               const Center(
                 child: Text(
                   'É bom\nter você\npor aqui!',
@@ -111,15 +114,12 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Spacer(),
-
                     LoginForm(
                       formKey: _formKey,
                       emailController: _emailController,
@@ -133,14 +133,11 @@ class _LoginPageState extends State<LoginPage> {
                         });
                       },
                     ),
-
                     const Spacer(),
-
                     LoginButton(
                       carregando: _carregando,
                       onPressed: _enviar,
                     ),
-
                     const SizedBox(height: 20),
                   ],
                 ),
