@@ -13,8 +13,17 @@ class EmailField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
+      cursorColor: Colors.black,
       decoration: const InputDecoration(
         labelText: 'E-mail UFF',
+        labelStyle: TextStyle(
+          color: Colors.black45,
+          fontSize: 14,
+        ),
+        floatingLabelStyle: TextStyle(
+          color: Colors.black54,
+          fontSize: 14,
+        ),
         border: UnderlineInputBorder(),
         enabledBorder: UnderlineInputBorder(
           borderSide: BorderSide(color: Colors.grey),

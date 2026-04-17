@@ -17,8 +17,18 @@ class PasswordField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
+      obscureText: !senhaVisivel,
+      cursorColor: Colors.black,
       decoration: InputDecoration(
         labelText: 'Senha',
+        labelStyle: const TextStyle(
+          color: Colors.black45,
+          fontSize: 14,
+        ),
+        floatingLabelStyle: const TextStyle(
+          color: Colors.black54,
+          fontSize: 14,
+        ),
         border: const UnderlineInputBorder(),
         enabledBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: Colors.grey),
@@ -29,11 +39,12 @@ class PasswordField extends StatelessWidget {
         suffixIcon: IconButton(
           icon: Icon(
             senhaVisivel ? Icons.visibility_off : Icons.visibility,
+            size: 20,
+            color: Colors.black54,
           ),
           onPressed: onToggleSenhaVisivel,
         ),
       ),
-      obscureText: !senhaVisivel,
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Informe a senha';
