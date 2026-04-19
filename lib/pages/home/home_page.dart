@@ -91,6 +91,15 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _abrirTelaCadastrosIniciais() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SelectTurmaProfessorPage(),
+      ),
+    );
+  }
+
   Widget _buildBotaoPrincipal({
     required String texto,
     required VoidCallback onPressed,
@@ -114,7 +123,37 @@ class _HomePageState extends State<HomePage> {
             fontSize: 13,
             fontWeight: FontWeight.w400,
           ),
+          textAlign: TextAlign.center,
         ),
+      ),
+    );
+  }
+
+  Widget _buildSecaoCoordenacao({
+    required String titulo,
+    required List<Widget> children,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            titulo,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...children,
+        ],
       ),
     );
   }
@@ -157,43 +196,60 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                 ),
-                const Spacer(),
-                const Column(
-                  children: [
-                    Text(
-                      'Olá,',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 1,
-                        color: Colors.black,
-                      ),
+                const SizedBox(height: 70),
+                const Text(
+                  'Olá,',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 1,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'se for sua primeira vez utilizando o sistema, realize as ações iniciais e, caso contrário, realize as ações de todo semestre.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 60),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        _buildSecaoCoordenacao(
+                          titulo: 'Ações iniciais',
+                          children: [
+                            _buildBotaoPrincipal(
+                              texto: 'Cadastros iniciais',
+                              onPressed: _abrirTelaCadastrosIniciais,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 50),
+                        _buildSecaoCoordenacao(
+                          titulo: 'Ações de todo semestre',
+                          children: [
+                            _buildBotaoPrincipal(
+                              texto: 'Importar plano de aulas dos alunos',
+                              onPressed: _abrirTelaImportarCsv,
+                            ),
+                            const SizedBox(height: 14),
+                            _buildBotaoPrincipal(
+                              texto: 'Revisar turmas e professores',
+                              onPressed: _abrirTelaCadastrarProfessorNasTurmas,
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    SizedBox(height: 8),
-                    Text(
-                      'você pode importar o CSV do semestre ou cadastrar os professores responsáveis pelas turmas.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 1,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                const Spacer(),
-                _buildBotaoPrincipal(
-                  texto: 'Importar CSV do semestre',
-                  onPressed: _abrirTelaImportarCsv,
-                ),
-                const SizedBox(height: 14),
-                _buildBotaoPrincipal(
-                  texto: 'Cadastrar professor nas turmas',
-                  onPressed: _abrirTelaCadastrarProfessorNasTurmas,
-                ),
-                const SizedBox(height: 20),
               ],
             ),
           ),
