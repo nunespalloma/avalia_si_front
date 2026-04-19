@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 Future<void> showDeletePopup(
   BuildContext context, {
   required VoidCallback onConfirm,
+  String title = 'Excluir registro',
+  String message = 'Tem certeza que deseja excluir este registro?',
 }) {
   return showDialog(
     context: context,
@@ -28,37 +30,36 @@ Future<void> showDeletePopup(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Excluir registro',
-                  style: TextStyle(
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
                     fontFamily: 'Michroma',
                     fontSize: 18,
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Tem certeza que deseja excluir esta disciplina, turma e professor?',
+                Text(
+                  message,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.black87,
                     height: 1.4,
                   ),
                 ),
                 const SizedBox(height: 20),
-
                 Row(
                   children: [
                     Expanded(
-                      flex: 6,
                       child: OutlinedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
+                        onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.black,
-                          side: const BorderSide(color: Colors.black),
+                          side: const BorderSide(color: Colors.black26),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(6),
                           ),
                         ),
                         child: const Text('Cancelar'),
@@ -66,7 +67,6 @@ Future<void> showDeletePopup(
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      flex: 5,
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.pop(context);
@@ -75,15 +75,13 @@ Future<void> showDeletePopup(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black,
                           foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(6),
                           ),
                         ),
-                        child: const Text(
-                          'Excluir',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          ),
+                        child: const Text('Excluir'),
                       ),
                     ),
                   ],

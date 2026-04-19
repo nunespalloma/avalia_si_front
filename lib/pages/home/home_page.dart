@@ -6,6 +6,7 @@ import '../evaluation/provide_evaluation_page.dart';
 import '../evaluation/view_evaluation_page.dart';
 import '../coordenacao/import_csv_page.dart';
 import '../coordenacao/review_disciplina_turma_professor_page.dart';
+import '../coordenacao/select_cadastros_base_page.dart';
 
 class HomePage extends StatefulWidget {
   final String? mensagemSucesso;
@@ -95,7 +96,7 @@ class _HomePageState extends State<HomePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => const SelectTurmaProfessorPage(),
+        builder: (_) => const SelectCadastrosBasePage(),
       ),
     );
   }
