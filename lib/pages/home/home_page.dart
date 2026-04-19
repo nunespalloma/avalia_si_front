@@ -5,7 +5,7 @@ import '../welcome/welcome_page.dart';
 import '../evaluation/provide_evaluation_page.dart';
 import '../evaluation/view_evaluation_page.dart';
 import '../coordenacao/import_csv_page.dart';
-import '../coordenacao/select_turma_professor_page.dart';
+import '../coordenacao/review_disciplina_turma_professor_page.dart';
 
 class HomePage extends StatefulWidget {
   final String? mensagemSucesso;

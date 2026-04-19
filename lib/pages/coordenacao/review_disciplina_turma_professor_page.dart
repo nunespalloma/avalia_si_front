@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../widgets/success_popup.dart';
+import '../../widgets/confirm_delete_popup.dart';
 
 class TurmaProfessorItem {
   final int id;
@@ -49,6 +51,9 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
   bool _adicionandoNovo = false;
   int _proximoId = 4;
 
+  String? _mensagemPendente;
+  bool _mensagemJaExibida = false;
+
   final TextEditingController _disciplinaController = TextEditingController();
   final TextEditingController _turmaController = TextEditingController();
   final TextEditingController _professorController = TextEditingController();
@@ -59,6 +64,13 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
     _turmaController.dispose();
     _professorController.dispose();
     super.dispose();
+  }
+
+  void _agendarAviso(String mensagem) {
+    setState(() {
+      _mensagemPendente = mensagem;
+      _mensagemJaExibida = false;
+    });
   }
 
   List<TurmaProfessorItem> get _turmasFiltradas {
@@ -109,11 +121,7 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
     final professor = _professorController.text.trim();
 
     if (disciplina.isEmpty || turma.isEmpty || professor.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Preencha disciplina, turma e professor.'),
-        ),
-      );
+      _agendarAviso('Preencha disciplina, turma e professor.');
       return;
     }
 
@@ -127,11 +135,7 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
       _professorController.clear();
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Informações atualizadas com sucesso.'),
-      ),
-    );
+    _agendarAviso('Informações atualizadas com sucesso.');
   }
 
   void _salvarNovoCadastro() {
@@ -140,11 +144,7 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
     final professor = _professorController.text.trim();
 
     if (disciplina.isEmpty || turma.isEmpty || professor.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Preencha disciplina, turma e professor.'),
-        ),
-      );
+      _agendarAviso('Preencha disciplina, turma e professor.');
       return;
     }
 
@@ -163,53 +163,27 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
       _professorController.clear();
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Registro adicionado com sucesso.'),
-      ),
-    );
+    _agendarAviso('Registro adicionado com sucesso.');
   }
 
-  Future<void> _excluirItem(TurmaProfessorItem item) async {
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (_) {
-        return AlertDialog(
-          title: const Text('Excluir registro'),
-          content: const Text(
-            'Tem certeza que deseja excluir esta disciplina, turma e professor?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Excluir'),
-            ),
-          ],
-        );
+ void _excluirItem(TurmaProfessorItem item) {
+    showDeletePopup(
+      context,
+      onConfirm: () {
+        setState(() {
+          _turmas.removeWhere((t) => t.id == item.id);
+
+          if (_idEmEdicao == item.id) {
+            _idEmEdicao = null;
+            _disciplinaController.clear();
+            _turmaController.clear();
+            _professorController.clear();
+          }
+        });
+
+        _agendarAviso('Registro excluído com sucesso.');
       },
     );
-
-    if (confirmar == true) {
-      setState(() {
-        _turmas.removeWhere((t) => t.id == item.id);
-        if (_idEmEdicao == item.id) {
-          _idEmEdicao = null;
-          _disciplinaController.clear();
-          _turmaController.clear();
-          _professorController.clear();
-        }
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Registro excluído com sucesso.'),
-        ),
-      );
-    }
   }
 
   Widget _buildCampo({
@@ -382,7 +356,7 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
                 child: ElevatedButton(
                   onPressed: isNovo
                       ? _salvarNovoCadastro
-                      : () => _salvarEdicao(item),
+                      : () => _salvarEdicao(item!),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     foregroundColor: Colors.white,
@@ -431,6 +405,23 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_mensagemJaExibida && _mensagemPendente != null) {
+      _mensagemJaExibida = true;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _mensagemPendente == null) return;
+
+        showTopMessageBanner(
+          context,
+          message: _mensagemPendente!,
+        );
+
+        setState(() {
+          _mensagemPendente = null;
+        });
+      });
+    }
+
     final turmasFiltradas = _turmasFiltradas;
 
     return Scaffold(
