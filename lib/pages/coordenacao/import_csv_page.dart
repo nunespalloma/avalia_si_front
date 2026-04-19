@@ -208,7 +208,7 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
               const SizedBox(height: 20),
               const Center(
                 child: Text(
-                  'Importar\nCSV',
+                  'Importar\nPlanos de Aula',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 30,
@@ -356,7 +356,7 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
                           ),
                         )
                       : const Text(
-                          'Importar CSV',
+                          'Importar planos de aula',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w400,

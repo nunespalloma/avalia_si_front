@@ -236,7 +236,7 @@ class _HomePageState extends State<HomePage> {
                           titulo: 'Ações de todo semestre',
                           children: [
                             _buildBotaoPrincipal(
-                              texto: 'Importar plano de aulas dos alunos',
+                              texto: 'Importar planos de aula dos alunos',
                               onPressed: _abrirTelaImportarCsv,
                             ),
                             const SizedBox(height: 14),
