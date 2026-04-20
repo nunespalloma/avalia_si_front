@@ -1,25 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../../widgets/success_popup.dart';
 import '../../widgets/confirm_delete_popup.dart';
 import '../../widgets/error_message.dart';
-
-class TurmaProfessorItem {
-  final int id;
-  String disciplina;
-  String turma;
-  String professor;
-  String semestre;
-
-  TurmaProfessorItem({
-    required this.id,
-    required this.disciplina,
-    required this.turma,
-    required this.professor,
-    required this.semestre,
-  });
-}
+import '../../services/turmas_service.dart';
 
 class SelectTurmaProfessorPage extends StatefulWidget {
   const SelectTurmaProfessorPage({super.key});
@@ -30,34 +13,11 @@ class SelectTurmaProfessorPage extends StatefulWidget {
 }
 
 class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
-  final List<TurmaProfessorItem> _turmas = [
-    TurmaProfessorItem(
-      id: 1,
-      disciplina: 'Segurança da Informação',
-      turma: 'A1',
-      professor: 'Profa. Mariana',
-      semestre: '2025.2',
-    ),
-    TurmaProfessorItem(
-      id: 2,
-      disciplina: 'Projeto de Aplicação II',
-      turma: 'A1',
-      professor: 'Prof. Carlos Henrique',
-      semestre: '2025.2',
-    ),
-    TurmaProfessorItem(
-      id: 3,
-      disciplina: 'Tópicos em Redes de Computadores I',
-      turma: 'A1',
-      professor: '',
-      semestre: '2025.2',
-    ),
-  ];
+  List<TurmaProfessorItem> _turmas = [];
 
   String _pesquisa = '';
   int? _idEmEdicao;
   bool _adicionandoNovo = false;
-  int _proximoId = 4;
 
   String? _mensagemPendente;
   bool _mensagemJaExibida = false;
@@ -65,22 +25,20 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
 
   final TextEditingController _turmaController = TextEditingController();
 
-  String? _disciplinaSelecionada;
-  String? _professorSelecionado;
-  String? _semestreSelecionado;
+  int? _disciplinaSelecionadaId;
+  int? _professorSelecionadoId;
+  int? _semestreSelecionadoId;
 
-  List<String> _disciplinas = [];
-  List<String> _professores = [];
-  List<String> _semestres = [];
+  List<OpcaoCadastro> _disciplinas = [];
+  List<OpcaoCadastro> _professores = [];
+  List<OpcaoCadastro> _semestres = [];
 
-  bool _carregandoOpcoes = true;
-
-  static const String _baseUrl = 'http://localhost:3000';
+  bool _carregando = true;
 
   @override
   void initState() {
     super.initState();
-    _carregarOpcoes();
+    _carregarTudo();
   }
 
   @override
@@ -89,59 +47,35 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
     super.dispose();
   }
 
-  Future<void> _carregarOpcoes() async {
+  Future<void> _carregarTudo() async {
     setState(() {
-      _carregandoOpcoes = true;
+      _carregando = true;
     });
 
     try {
-      final responses = await Future.wait([
-        http.get(Uri.parse('$_baseUrl/disciplinas')),
-        http.get(Uri.parse('$_baseUrl/professores')),
-        http.get(Uri.parse('$_baseUrl/semestres')),
+      final results = await Future.wait([
+        TurmasService.listarTurmas(),
+        TurmasService.listarDisciplinas(),
+        TurmasService.listarProfessores(),
+        TurmasService.listarSemestres(),
       ]);
 
-      final disciplinasResponse = responses[0];
-      final professoresResponse = responses[1];
-      final semestresResponse = responses[2];
+      if (!mounted) return;
 
-      if (disciplinasResponse.statusCode == 200 &&
-          professoresResponse.statusCode == 200 &&
-          semestresResponse.statusCode == 200) {
-        final disciplinasJson = jsonDecode(disciplinasResponse.body) as List;
-        final professoresJson = jsonDecode(professoresResponse.body) as List;
-        final semestresJson = jsonDecode(semestresResponse.body) as List;
-
-        setState(() {
-          _disciplinas = disciplinasJson
-              .map((item) => item['nome'].toString())
-              .toList();
-
-          _professores = professoresJson
-              .map((item) => item['nome'].toString())
-              .toList();
-
-          _semestres = semestresJson
-              .map((item) => '${item['ano']}.${item['periodo']}')
-              .toList();
-        });
-      } else {
-        _agendarAviso(
-          'Não foi possível carregar disciplinas, professores e semestres.',
-          erro: true,
-        );
-      }
-    } catch (_) {
-      _agendarAviso(
-        'Erro ao carregar disciplinas, professores e semestres.',
-        erro: true,
-      );
+      setState(() {
+        _turmas = results[0] as List<TurmaProfessorItem>;
+        _disciplinas = results[1] as List<OpcaoCadastro>;
+        _professores = results[2] as List<OpcaoCadastro>;
+        _semestres = results[3] as List<OpcaoCadastro>;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      _agendarAviso(e.toString().replaceFirst('Exception: ', ''), erro: true);
     } finally {
-      if (mounted) {
-        setState(() {
-          _carregandoOpcoes = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _carregando = false;
+      });
     }
   }
 
@@ -170,10 +104,10 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
     setState(() {
       _adicionandoNovo = false;
       _idEmEdicao = item.id;
-      _disciplinaSelecionada = item.disciplina;
+      _disciplinaSelecionadaId = item.disciplinaId;
       _turmaController.text = item.turma;
-      _professorSelecionado = item.professor.isEmpty ? null : item.professor;
-      _semestreSelecionado = item.semestre;
+      _professorSelecionadoId = item.professorId;
+      _semestreSelecionadoId = item.semestreId;
     });
   }
 
@@ -181,10 +115,10 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
     setState(() {
       _idEmEdicao = null;
       _adicionandoNovo = true;
-      _disciplinaSelecionada = null;
+      _disciplinaSelecionadaId = null;
       _turmaController.clear();
-      _professorSelecionado = null;
-      _semestreSelecionado = null;
+      _professorSelecionadoId = null;
+      _semestreSelecionadoId = null;
     });
   }
 
@@ -192,101 +126,122 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
     setState(() {
       _idEmEdicao = null;
       _adicionandoNovo = false;
-      _disciplinaSelecionada = null;
+      _disciplinaSelecionadaId = null;
       _turmaController.clear();
-      _professorSelecionado = null;
-      _semestreSelecionado = null;
+      _professorSelecionadoId = null;
+      _semestreSelecionadoId = null;
     });
   }
 
-  void _salvarEdicao(TurmaProfessorItem item) {
-    final disciplina = _disciplinaSelecionada?.trim() ?? '';
+  Future<void> _salvarEdicao(TurmaProfessorItem item) async {
     final turma = _turmaController.text.trim();
-    final professor = _professorSelecionado?.trim() ?? '';
-    final semestre = _semestreSelecionado?.trim() ?? '';
 
-    if (disciplina.isEmpty ||
+    if (_disciplinaSelecionadaId == null ||
         turma.isEmpty ||
-        professor.isEmpty ||
-        semestre.isEmpty) {
+        _semestreSelecionadoId == null) {
       _agendarAviso(
-        'Preencha disciplina, turma, professor e semestre.',
+        'Preencha disciplina, turma e semestre.',
         erro: true,
       );
       return;
     }
 
-    setState(() {
-      item.disciplina = disciplina;
-      item.turma = turma;
-      item.professor = professor;
-      item.semestre = semestre;
-      _idEmEdicao = null;
-      _disciplinaSelecionada = null;
-      _turmaController.clear();
-      _professorSelecionado = null;
-      _semestreSelecionado = null;
-    });
+    try {
+      final mensagem = await TurmasService.atualizarTurma(
+        id: item.id,
+        nome: turma,
+        disciplinaId: _disciplinaSelecionadaId!,
+        professorId: _professorSelecionadoId,
+        semestreId: _semestreSelecionadoId!,
+      );
 
-    _agendarAviso('Informações atualizadas com sucesso.');
+      if (!mounted) return;
+
+      setState(() {
+        _idEmEdicao = null;
+        _disciplinaSelecionadaId = null;
+        _turmaController.clear();
+        _professorSelecionadoId = null;
+        _semestreSelecionadoId = null;
+      });
+
+      await _carregarTudo();
+      _agendarAviso(mensagem);
+    } catch (e) {
+      if (!mounted) return;
+      _agendarAviso(e.toString().replaceFirst('Exception: ', ''), erro: true);
+    }
   }
 
-  void _salvarNovoCadastro() {
-    final disciplina = _disciplinaSelecionada?.trim() ?? '';
+  Future<void> _salvarNovoCadastro() async {
     final turma = _turmaController.text.trim();
-    final professor = _professorSelecionado?.trim() ?? '';
-    final semestre = _semestreSelecionado?.trim() ?? '';
 
-    if (disciplina.isEmpty ||
+    if (_disciplinaSelecionadaId == null ||
         turma.isEmpty ||
-        professor.isEmpty ||
-        semestre.isEmpty) {
+        _semestreSelecionadoId == null) {
       _agendarAviso(
-        'Preencha disciplina, turma, professor e semestre.',
+        'Preencha disciplina, turma e semestre.',
         erro: true,
       );
       return;
     }
 
-    setState(() {
-      _turmas.add(
-        TurmaProfessorItem(
-          id: _proximoId++,
-          disciplina: disciplina,
-          turma: turma,
-          professor: professor,
-          semestre: semestre,
-        ),
+    try {
+      final mensagem = await TurmasService.criarTurma(
+        nome: turma,
+        disciplinaId: _disciplinaSelecionadaId!,
+        professorId: _professorSelecionadoId,
+        semestreId: _semestreSelecionadoId!,
       );
-      _adicionandoNovo = false;
-      _disciplinaSelecionada = null;
-      _turmaController.clear();
-      _professorSelecionado = null;
-      _semestreSelecionado = null;
-    });
 
-    _agendarAviso('Registro adicionado com sucesso.');
+      if (!mounted) return;
+
+      setState(() {
+        _adicionandoNovo = false;
+        _disciplinaSelecionadaId = null;
+        _turmaController.clear();
+        _professorSelecionadoId = null;
+        _semestreSelecionadoId = null;
+      });
+
+      await _carregarTudo();
+      _agendarAviso(mensagem);
+    } catch (e) {
+      if (!mounted) return;
+      _agendarAviso(e.toString().replaceFirst('Exception: ', ''), erro: true);
+    }
   }
 
   void _excluirItem(TurmaProfessorItem item) {
     showDeletePopup(
       context,
-      title: 'Excluir registro',
-      message: 'Tem certeza que deseja excluir este registro?',
-      onConfirm: () {
-        setState(() {
-          _turmas.removeWhere((t) => t.id == item.id);
+      title: 'Excluir turma',
+      message: 'Tem certeza que deseja excluir esta turma?',
+      onConfirm: () async {
+        try {
+          final mensagem = await TurmasService.excluirTurma(item.id);
 
-          if (_idEmEdicao == item.id) {
-            _idEmEdicao = null;
-            _disciplinaSelecionada = null;
-            _turmaController.clear();
-            _professorSelecionado = null;
-            _semestreSelecionado = null;
-          }
-        });
+          if (!mounted) return;
 
-        _agendarAviso('Registro excluído com sucesso.');
+          setState(() {
+            if (_idEmEdicao == item.id) {
+              _idEmEdicao = null;
+              _disciplinaSelecionadaId = null;
+              _turmaController.clear();
+              _professorSelecionadoId = null;
+              _semestreSelecionadoId = null;
+            }
+          });
+
+          await _carregarTudo();
+          _agendarAviso(mensagem);
+        } catch (e) {
+          if (!mounted) return;
+          _agendarAviso(
+            e.toString().replaceFirst('Exception: ', ''),
+            erro: true,
+          );
+        }
       },
     );
   }
@@ -327,14 +282,14 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
 
   Widget _buildDropdown({
     required String hint,
-    required String? value,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
+    required int? value,
+    required List<OpcaoCadastro> items,
+    required ValueChanged<int?> onChanged,
   }) {
-    final valorValido =
-        value != null && items.contains(value) ? value : null;
+    final ids = items.map((e) => e.id).toList();
+    final valorValido = value != null && ids.contains(value) ? value : null;
 
-    return DropdownButtonFormField<String>(
+    return DropdownButtonFormField<int>(
       value: valorValido,
       isExpanded: true,
       decoration: InputDecoration(
@@ -364,10 +319,10 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
       ),
       items: items
           .map(
-            (item) => DropdownMenuItem<String>(
-              value: item,
+            (item) => DropdownMenuItem<int>(
+              value: item.id,
               child: Text(
-                item,
+                item.nome,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 14,
@@ -506,11 +461,11 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
           const SizedBox(height: 16),
           _buildDropdown(
             hint: 'Disciplina',
-            value: _disciplinaSelecionada,
+            value: _disciplinaSelecionadaId,
             items: _disciplinas,
             onChanged: (value) {
               setState(() {
-                _disciplinaSelecionada = value;
+                _disciplinaSelecionadaId = value;
               });
             },
           ),
@@ -522,22 +477,22 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
           const SizedBox(height: 12),
           _buildDropdown(
             hint: 'Professor',
-            value: _professorSelecionado,
+            value: _professorSelecionadoId,
             items: _professores,
             onChanged: (value) {
               setState(() {
-                _professorSelecionado = value;
+                _professorSelecionadoId = value;
               });
             },
           ),
           const SizedBox(height: 12),
           _buildDropdown(
             hint: 'Semestre',
-            value: _semestreSelecionado,
+            value: _semestreSelecionadoId,
             items: _semestres,
             onChanged: (value) {
               setState(() {
-                _semestreSelecionado = value;
+                _semestreSelecionadoId = value;
               });
             },
           ),
@@ -546,7 +501,7 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
             children: [
               Expanded(
                 child: ElevatedButton(
-                  onPressed: _carregandoOpcoes
+                  onPressed: _carregando
                       ? null
                       : isNovo
                           ? _salvarNovoCadastro
@@ -691,7 +646,9 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _adicionandoNovo ? null : _iniciarNovoCadastro,
+                  onPressed: (_adicionandoNovo || _carregando)
+                      ? null
+                      : _iniciarNovoCadastro,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     foregroundColor: Colors.white,
@@ -724,10 +681,8 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
               ],
               const SizedBox(height: 24),
               Expanded(
-                child: _carregandoOpcoes
-                    ? const Center(
-                        child: CircularProgressIndicator(),
-                      )
+                child: _carregando
+                    ? const Center(child: CircularProgressIndicator())
                     : turmasFiltradas.isEmpty && !_adicionandoNovo
                         ? const Center(
                             child: Text(
