@@ -2,31 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/success_popup.dart';
 import '../../widgets/confirm_delete_popup.dart';
 import '../../widgets/error_message.dart';
-
-enum TipoCadastro {
-  disciplina,
-  professor,
-  semestre,
-}
-
-class CadastroBaseItem {
-  final int id;
-  final TipoCadastro tipo;
-
-  String? nome;
-  String? codigo;
-  String? ano;
-  String? periodo;
-
-  CadastroBaseItem({
-    required this.id,
-    required this.tipo,
-    this.nome,
-    this.codigo,
-    this.ano,
-    this.periodo,
-  });
-}
+import '../../services/cadastros_base_service.dart';
 
 class SelectCadastrosBasePage extends StatefulWidget {
   const SelectCadastrosBasePage({super.key});
@@ -37,48 +13,13 @@ class SelectCadastrosBasePage extends StatefulWidget {
 }
 
 class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
-  final List<CadastroBaseItem> _itens = [
-    CadastroBaseItem(
-      id: 1,
-      tipo: TipoCadastro.disciplina,
-      nome: 'Segurança da Informação',
-      codigo: 'INF001',
-    ),
-    CadastroBaseItem(
-      id: 2,
-      tipo: TipoCadastro.disciplina,
-      nome: 'Projeto de Aplicação II',
-      codigo: 'INF002',
-    ),
-    CadastroBaseItem(
-      id: 3,
-      tipo: TipoCadastro.professor,
-      nome: 'Profa. Mariana',
-    ),
-    CadastroBaseItem(
-      id: 4,
-      tipo: TipoCadastro.professor,
-      nome: 'Prof. Carlos Henrique',
-    ),
-    CadastroBaseItem(
-      id: 5,
-      tipo: TipoCadastro.semestre,
-      ano: '2025',
-      periodo: '1',
-    ),
-    CadastroBaseItem(
-      id: 6,
-      tipo: TipoCadastro.semestre,
-      ano: '2025',
-      periodo: '2',
-    ),
-  ];
+  List<CadastroBaseItem> _itens = [];
 
   TipoCadastro _tipoSelecionado = TipoCadastro.disciplina;
   String _pesquisa = '';
   int? _idEmEdicao;
   bool _adicionandoNovo = false;
-  int _proximoId = 7;
+  bool _carregando = false;
 
   String? _mensagemPendente;
   bool _mensagemJaExibida = false;
@@ -90,12 +31,42 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
   final TextEditingController _periodoController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    _carregarItens();
+  }
+
+  @override
   void dispose() {
     _nomeController.dispose();
     _codigoController.dispose();
     _anoController.dispose();
     _periodoController.dispose();
     super.dispose();
+  }
+
+  Future<void> _carregarItens() async {
+    setState(() {
+      _carregando = true;
+    });
+
+    try {
+      final itens = await CadastrosBaseService.listar(_tipoSelecionado);
+
+      if (!mounted) return;
+
+      setState(() {
+        _itens = itens;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      _agendarAviso(e.toString().replaceFirst('Exception: ', ''), erro: true);
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _carregando = false;
+      });
+    }
   }
 
   void _agendarAviso(String mensagem, {bool erro = false}) {
@@ -143,8 +114,6 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
     final termo = _pesquisa.toLowerCase().trim();
 
     return _itens.where((item) {
-      if (item.tipo != _tipoSelecionado) return false;
-
       if (_tipoSelecionado == TipoCadastro.disciplina) {
         return (item.nome ?? '').toLowerCase().contains(termo) ||
             (item.codigo ?? '').toLowerCase().contains(termo);
@@ -170,6 +139,8 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
       _anoController.clear();
       _periodoController.clear();
     });
+
+    _carregarItens();
   }
 
   void _iniciarEdicao(CadastroBaseItem item) {
@@ -205,147 +176,129 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
     });
   }
 
-  void _salvarEdicao(CadastroBaseItem item) {
-    if (_tipoSelecionado == TipoCadastro.disciplina) {
-      final nome = _nomeController.text.trim();
-      final codigo = _codigoController.text.trim();
+  Future<void> _salvarEdicao(CadastroBaseItem item) async {
+    try {
+      String mensagem;
 
-      if (nome.isEmpty || codigo.isEmpty) {
-        _agendarAviso('Preencha nome e código da disciplina.', erro: true);
-        return;
-      }
+      if (_tipoSelecionado == TipoCadastro.disciplina) {
+        final nome = _nomeController.text.trim();
+        final codigo = _codigoController.text.trim();
 
-      setState(() {
-        item.nome = nome;
-        item.codigo = codigo;
-        _idEmEdicao = null;
-        _nomeController.clear();
-        _codigoController.clear();
-        _anoController.clear();
-        _periodoController.clear();
-      });
+        if (nome.isEmpty || codigo.isEmpty) {
+          _agendarAviso('Preencha nome e código da disciplina.', erro: true);
+          return;
+        }
 
-      _agendarAviso('Disciplina atualizada com sucesso.');
-      return;
-    }
-
-    if (_tipoSelecionado == TipoCadastro.professor) {
-      final nome = _nomeController.text.trim();
-
-      if (nome.isEmpty) {
-        _agendarAviso('Preencha o nome do professor.', erro: true);
-        return;
-      }
-
-      setState(() {
-        item.nome = nome;
-        _idEmEdicao = null;
-        _nomeController.clear();
-        _codigoController.clear();
-        _anoController.clear();
-        _periodoController.clear();
-      });
-
-      _agendarAviso('Professor atualizado com sucesso.');
-      return;
-    }
-
-    final ano = _anoController.text.trim();
-    final periodo = _periodoController.text.trim();
-
-    if (ano.isEmpty || periodo.isEmpty) {
-      _agendarAviso('Preencha ano e período.', erro: true);
-      return;
-    }
-
-    setState(() {
-      item.ano = ano;
-      item.periodo = periodo;
-      _idEmEdicao = null;
-      _nomeController.clear();
-      _codigoController.clear();
-      _anoController.clear();
-      _periodoController.clear();
-    });
-
-    _agendarAviso('Semestre atualizado com sucesso.');
-  }
-
-  void _salvarNovoCadastro() {
-    if (_tipoSelecionado == TipoCadastro.disciplina) {
-      final nome = _nomeController.text.trim();
-      final codigo = _codigoController.text.trim();
-
-      if (nome.isEmpty || codigo.isEmpty) {
-        _agendarAviso('Preencha nome e código da disciplina.', erro: true);
-        return;
-      }
-
-      setState(() {
-        _itens.add(
-          CadastroBaseItem(
-            id: _proximoId++,
-            tipo: TipoCadastro.disciplina,
-            nome: nome,
-            codigo: codigo,
-          ),
+        mensagem = await CadastrosBaseService.atualizarDisciplina(
+          id: item.id,
+          nome: nome,
+          codigo: codigo,
         );
-        _adicionandoNovo = false;
-        _nomeController.clear();
-        _codigoController.clear();
-      });
+      } else if (_tipoSelecionado == TipoCadastro.professor) {
+        final nome = _nomeController.text.trim();
 
-      _agendarAviso('Disciplina adicionada com sucesso.');
-      return;
-    }
+        if (nome.isEmpty) {
+          _agendarAviso('Preencha o nome do professor.', erro: true);
+          return;
+        }
 
-    if (_tipoSelecionado == TipoCadastro.professor) {
-      final nome = _nomeController.text.trim();
-
-      if (nome.isEmpty) {
-        _agendarAviso('Preencha o nome do professor.', erro: true);
-        return;
-      }
-
-      setState(() {
-        _itens.add(
-          CadastroBaseItem(
-            id: _proximoId++,
-            tipo: TipoCadastro.professor,
-            nome: nome,
-          ),
+        mensagem = await CadastrosBaseService.atualizarProfessor(
+          id: item.id,
+          nome: nome,
         );
-        _adicionandoNovo = false;
-        _nomeController.clear();
-      });
+      } else {
+        final ano = _anoController.text.trim();
+        final periodo = _periodoController.text.trim();
 
-      _agendarAviso('Professor adicionado com sucesso.');
-      return;
-    }
+        if (ano.isEmpty || periodo.isEmpty) {
+          _agendarAviso('Preencha ano e período.', erro: true);
+          return;
+        }
 
-    final ano = _anoController.text.trim();
-    final periodo = _periodoController.text.trim();
-
-    if (ano.isEmpty || periodo.isEmpty) {
-      _agendarAviso('Preencha ano e período.', erro: true);
-      return;
-    }
-
-    setState(() {
-      _itens.add(
-        CadastroBaseItem(
-          id: _proximoId++,
-          tipo: TipoCadastro.semestre,
+        mensagem = await CadastrosBaseService.atualizarSemestre(
+          id: item.id,
           ano: ano,
           periodo: periodo,
-        ),
-      );
-      _adicionandoNovo = false;
-      _anoController.clear();
-      _periodoController.clear();
-    });
+        );
+      }
 
-    _agendarAviso('Semestre adicionado com sucesso.');
+      if (!mounted) return;
+
+      setState(() {
+        _idEmEdicao = null;
+        _nomeController.clear();
+        _codigoController.clear();
+        _anoController.clear();
+        _periodoController.clear();
+      });
+
+      await _carregarItens();
+      _agendarAviso(mensagem);
+    } catch (e) {
+      if (!mounted) return;
+      _agendarAviso(e.toString().replaceFirst('Exception: ', ''), erro: true);
+    }
+  }
+
+  Future<void> _salvarNovoCadastro() async {
+    try {
+      String mensagem;
+
+      if (_tipoSelecionado == TipoCadastro.disciplina) {
+        final nome = _nomeController.text.trim();
+        final codigo = _codigoController.text.trim();
+
+        if (nome.isEmpty || codigo.isEmpty) {
+          _agendarAviso('Preencha nome e código da disciplina.', erro: true);
+          return;
+        }
+
+        mensagem = await CadastrosBaseService.criarDisciplina(
+          nome: nome,
+          codigo: codigo,
+        );
+      } else if (_tipoSelecionado == TipoCadastro.professor) {
+        final nome = _nomeController.text.trim();
+
+        if (nome.isEmpty) {
+          _agendarAviso('Preencha o nome do professor.', erro: true);
+          return;
+        }
+
+        mensagem = await CadastrosBaseService.criarProfessor(
+          nome: nome,
+        );
+      } else {
+        final ano = _anoController.text.trim();
+        final periodo = _periodoController.text.trim();
+
+        if (ano.isEmpty || periodo.isEmpty) {
+          _agendarAviso('Preencha ano e período.', erro: true);
+          return;
+        }
+
+        mensagem = await CadastrosBaseService.criarSemestre(
+          ano: ano,
+          periodo: periodo,
+        );
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _adicionandoNovo = false;
+        _nomeController.clear();
+        _codigoController.clear();
+        _anoController.clear();
+        _periodoController.clear();
+      });
+
+      await _carregarItens();
+      _agendarAviso(mensagem);
+    } catch (e) {
+      if (!mounted) return;
+      _agendarAviso(e.toString().replaceFirst('Exception: ', ''), erro: true);
+    }
   }
 
   void _excluirItem(CadastroBaseItem item) {
@@ -367,22 +320,42 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
       context,
       title: titulo,
       message: mensagem,
-      onConfirm: () {
-        setState(() {
-          _itens.removeWhere((i) => i.id == item.id);
+      onConfirm: () async {
+        try {
+          String mensagemRetorno;
 
-          if (_idEmEdicao == item.id) {
-            _idEmEdicao = null;
-            _nomeController.clear();
-            _codigoController.clear();
-            _anoController.clear();
-            _periodoController.clear();
+          if (item.tipo == TipoCadastro.disciplina) {
+            mensagemRetorno =
+                await CadastrosBaseService.excluirDisciplina(item.id);
+          } else if (item.tipo == TipoCadastro.professor) {
+            mensagemRetorno =
+                await CadastrosBaseService.excluirProfessor(item.id);
+          } else {
+            mensagemRetorno =
+                await CadastrosBaseService.excluirSemestre(item.id);
           }
-        });
 
-        _agendarAviso(
-          '${_tituloTipo(item.tipo)[0].toUpperCase()}${_tituloTipo(item.tipo).substring(1)} excluído com sucesso.',
-        );
+          if (!mounted) return;
+
+          setState(() {
+            if (_idEmEdicao == item.id) {
+              _idEmEdicao = null;
+              _nomeController.clear();
+              _codigoController.clear();
+              _anoController.clear();
+              _periodoController.clear();
+            }
+          });
+
+          await _carregarItens();
+          _agendarAviso(mensagemRetorno);
+        } catch (e) {
+          if (!mounted) return;
+          _agendarAviso(
+            e.toString().replaceFirst('Exception: ', ''),
+            erro: true,
+          );
+        }
       },
     );
   }
@@ -617,9 +590,11 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
             children: [
               Expanded(
                 child: ElevatedButton(
-                  onPressed: isNovo
-                      ? _salvarNovoCadastro
-                      : () => _salvarEdicao(item),
+                  onPressed: _carregando
+                      ? null
+                      : isNovo
+                          ? _salvarNovoCadastro
+                          : () => _salvarEdicao(item),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     foregroundColor: Colors.white,
@@ -668,9 +643,7 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_mensagemJaExibida &&
-        _mensagemPendente != null &&
-        !_erroAtual) {
+    if (!_mensagemJaExibida && _mensagemPendente != null && !_erroAtual) {
       _mensagemJaExibida = true;
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -784,7 +757,8 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _adicionandoNovo ? null : _iniciarNovoCadastro,
+                  onPressed:
+                      (_adicionandoNovo || _carregando) ? null : _iniciarNovoCadastro,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     foregroundColor: Colors.white,
@@ -817,35 +791,38 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
               ],
               const SizedBox(height: 24),
               Expanded(
-                child: itensFiltrados.isEmpty && !_adicionandoNovo
-                    ? Center(
-                        child: Text(
-                          'Nenhum ${_tituloTipoPlural(_tipoSelecionado)} encontrado.',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black54,
+                child: _carregando
+                    ? const Center(child: CircularProgressIndicator())
+                    : itensFiltrados.isEmpty && !_adicionandoNovo
+                        ? Center(
+                            child: Text(
+                              'Nenhum ${_tituloTipoPlural(_tipoSelecionado)} encontrado.',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            itemCount:
+                                itensFiltrados.length + (_adicionandoNovo ? 1 : 0),
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 14),
+                            itemBuilder: (context, index) {
+                              if (_adicionandoNovo && index == 0) {
+                                return _buildCardEdicao();
+                              }
+
+                              final item = itensFiltrados[
+                                  _adicionandoNovo ? index - 1 : index];
+
+                              if (_idEmEdicao == item.id) {
+                                return _buildCardEdicao(item: item);
+                              }
+
+                              return _buildCardVisualizacao(item);
+                            },
                           ),
-                        ),
-                      )
-                    : ListView.separated(
-                        itemCount:
-                            itensFiltrados.length + (_adicionandoNovo ? 1 : 0),
-                        separatorBuilder: (_, __) => const SizedBox(height: 14),
-                        itemBuilder: (context, index) {
-                          if (_adicionandoNovo && index == 0) {
-                            return _buildCardEdicao();
-                          }
-
-                          final item = itensFiltrados[
-                              _adicionandoNovo ? index - 1 : index];
-
-                          if (_idEmEdicao == item.id) {
-                            return _buildCardEdicao(item: item);
-                          }
-
-                          return _buildCardVisualizacao(item);
-                        },
-                      ),
               ),
             ],
           ),
