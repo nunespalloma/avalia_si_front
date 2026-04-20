@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/success_popup.dart';
 import '../../widgets/confirm_delete_popup.dart';
+import '../../widgets/error_message.dart';
 
 enum TipoCadastro {
   disciplina,
@@ -81,6 +82,7 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
 
   String? _mensagemPendente;
   bool _mensagemJaExibida = false;
+  bool _erroAtual = false;
 
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _codigoController = TextEditingController();
@@ -96,9 +98,10 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
     super.dispose();
   }
 
-  void _agendarAviso(String mensagem) {
+  void _agendarAviso(String mensagem, {bool erro = false}) {
     setState(() {
       _mensagemPendente = mensagem;
+      _erroAtual = erro;
       _mensagemJaExibida = false;
     });
   }
@@ -208,7 +211,7 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
       final codigo = _codigoController.text.trim();
 
       if (nome.isEmpty || codigo.isEmpty) {
-        _agendarAviso('Preencha nome e código da disciplina.');
+        _agendarAviso('Preencha nome e código da disciplina.', erro: true);
         return;
       }
 
@@ -230,7 +233,7 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
       final nome = _nomeController.text.trim();
 
       if (nome.isEmpty) {
-        _agendarAviso('Preencha o nome do professor.');
+        _agendarAviso('Preencha o nome do professor.', erro: true);
         return;
       }
 
@@ -251,7 +254,7 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
     final periodo = _periodoController.text.trim();
 
     if (ano.isEmpty || periodo.isEmpty) {
-      _agendarAviso('Preencha ano e período.');
+      _agendarAviso('Preencha ano e período.', erro: true);
       return;
     }
 
@@ -274,7 +277,7 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
       final codigo = _codigoController.text.trim();
 
       if (nome.isEmpty || codigo.isEmpty) {
-        _agendarAviso('Preencha nome e código da disciplina.');
+        _agendarAviso('Preencha nome e código da disciplina.', erro: true);
         return;
       }
 
@@ -300,7 +303,7 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
       final nome = _nomeController.text.trim();
 
       if (nome.isEmpty) {
-        _agendarAviso('Preencha o nome do professor.');
+        _agendarAviso('Preencha o nome do professor.', erro: true);
         return;
       }
 
@@ -324,7 +327,7 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
     final periodo = _periodoController.text.trim();
 
     if (ano.isEmpty || periodo.isEmpty) {
-      _agendarAviso('Preencha ano e período.');
+      _agendarAviso('Preencha ano e período.', erro: true);
       return;
     }
 
@@ -665,7 +668,9 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_mensagemJaExibida && _mensagemPendente != null) {
+    if (!_mensagemJaExibida &&
+        _mensagemPendente != null &&
+        !_erroAtual) {
       _mensagemJaExibida = true;
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -798,6 +803,18 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
                   ),
                 ),
               ),
+              if (_mensagemPendente != null && _erroAtual) ...[
+                const SizedBox(height: 16),
+                ErrorMessage(
+                  message: _mensagemPendente!,
+                  onClose: () {
+                    setState(() {
+                      _mensagemPendente = null;
+                      _erroAtual = false;
+                    });
+                  },
+                ),
+              ],
               const SizedBox(height: 24),
               Expanded(
                 child: itensFiltrados.isEmpty && !_adicionandoNovo

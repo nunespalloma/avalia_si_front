@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../widgets/success_popup.dart';
 import '../../widgets/confirm_delete_popup.dart';
+import '../../widgets/error_message.dart';
 
 class TurmaProfessorItem {
   final int id;
@@ -60,6 +61,7 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
 
   String? _mensagemPendente;
   bool _mensagemJaExibida = false;
+  bool _erroAtual = false;
 
   final TextEditingController _turmaController = TextEditingController();
 
@@ -124,10 +126,16 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
               .toList();
         });
       } else {
-        _agendarAviso('Não foi possível carregar disciplinas, professores e semestres.');
+        _agendarAviso(
+          'Não foi possível carregar disciplinas, professores e semestres.',
+          erro: true,
+        );
       }
     } catch (_) {
-      _agendarAviso('Erro ao carregar disciplinas, professores e semestres.');
+      _agendarAviso(
+        'Erro ao carregar disciplinas, professores e semestres.',
+        erro: true,
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -137,9 +145,10 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
     }
   }
 
-  void _agendarAviso(String mensagem) {
+  void _agendarAviso(String mensagem, {bool erro = false}) {
     setState(() {
       _mensagemPendente = mensagem;
+      _erroAtual = erro;
       _mensagemJaExibida = false;
     });
   }
@@ -200,7 +209,10 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
         turma.isEmpty ||
         professor.isEmpty ||
         semestre.isEmpty) {
-      _agendarAviso('Preencha disciplina, turma, professor e semestre.');
+      _agendarAviso(
+        'Preencha disciplina, turma, professor e semestre.',
+        erro: true,
+      );
       return;
     }
 
@@ -229,7 +241,10 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
         turma.isEmpty ||
         professor.isEmpty ||
         semestre.isEmpty) {
-      _agendarAviso('Preencha disciplina, turma, professor e semestre.');
+      _agendarAviso(
+        'Preencha disciplina, turma, professor e semestre.',
+        erro: true,
+      );
       return;
     }
 
@@ -584,7 +599,9 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_mensagemJaExibida && _mensagemPendente != null) {
+    if (!_mensagemJaExibida &&
+        _mensagemPendente != null &&
+        !_erroAtual) {
       _mensagemJaExibida = true;
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -693,6 +710,18 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
                   ),
                 ),
               ),
+              if (_mensagemPendente != null && _erroAtual) ...[
+                const SizedBox(height: 16),
+                ErrorMessage(
+                  message: _mensagemPendente!,
+                  onClose: () {
+                    setState(() {
+                      _mensagemPendente = null;
+                      _erroAtual = false;
+                    });
+                  },
+                ),
+              ],
               const SizedBox(height: 24),
               Expanded(
                 child: _carregandoOpcoes
