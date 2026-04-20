@@ -485,25 +485,13 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
         ),
       );
     } else {
-      conteudo = Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Ano: ${item.ano ?? ''}',
-            style: const TextStyle(
-              fontSize: 13,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Período: ${item.periodo ?? ''}',
-            style: const TextStyle(
-              fontSize: 13,
-              color: Colors.black87,
-            ),
-          ),
-        ],
+      conteudo = Text(
+        '${item.ano ?? ''}.${item.periodo ?? ''}',
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: Colors.black,
+        ),
       );
     }
 
