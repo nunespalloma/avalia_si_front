@@ -619,7 +619,7 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
                 child: ElevatedButton(
                   onPressed: isNovo
                       ? _salvarNovoCadastro
-                      : () => _salvarEdicao(item!),
+                      : () => _salvarEdicao(item),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     foregroundColor: Colors.white,

@@ -550,7 +550,7 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
                       ? null
                       : isNovo
                           ? _salvarNovoCadastro
-                          : () => _salvarEdicao(item!),
+                          : () => _salvarEdicao(item),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     foregroundColor: Colors.white,

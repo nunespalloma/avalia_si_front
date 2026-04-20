@@ -1,12 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
 import '../../widgets/error_message.dart';
-import 'widgets/semestre_name_field.dart';
 
 class ImportCsvPage extends StatefulWidget {
   const ImportCsvPage({super.key});
