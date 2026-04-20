@@ -59,7 +59,7 @@ class _SignUpPageState extends State<SignUpPage> {
     });
 
     try {
-      final mensagem = await _authService.cadastrar(
+      await _authService.cadastrar(
         nome: _nomeController.text.trim(),
         email: _emailController.text.trim(),
         matricula: _matriculaController.text.trim(),
@@ -67,10 +67,6 @@ class _SignUpPageState extends State<SignUpPage> {
       );
 
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(mensagem)),
-      );
 
       Navigator.pushReplacement(
         context,
