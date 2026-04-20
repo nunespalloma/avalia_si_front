@@ -132,6 +132,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildSecaoCoordenacao({
     required String titulo,
+    required String descricao,
     required List<Widget> children,
   }) {
     return Container(
@@ -150,6 +151,16 @@ class _HomePageState extends State<HomePage> {
               fontSize: 18,
               fontWeight: FontWeight.w500,
               color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            descricao,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+              color: Colors.black38,
+              height: 1.4,
             ),
           ),
           const SizedBox(height: 16),
@@ -210,7 +221,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'se for sua primeira vez utilizando o sistema, realize as ações iniciais e, caso contrário, realize as ações de todo semestre.',
+                  'siga as instruções conforme indicado abaixo.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 18,
@@ -225,24 +236,38 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         _buildSecaoCoordenacao(
                           titulo: 'Ações iniciais',
+                          descricao:
+                              '1. Cadastrar disciplinas, professores e semestres.\n2. Montar turmas.',
                           children: [
                             _buildBotaoPrincipal(
-                              texto: 'Cadastros iniciais',
+                              texto: 'Cadastros',
                               onPressed: _abrirTelaCadastrosIniciais,
+                            ),
+                            const SizedBox(height: 14),
+                            _buildBotaoPrincipal(
+                              texto: 'Montar turmas',
+                              onPressed: _abrirTelaCadastrarProfessorNasTurmas,
                             ),
                           ],
                         ),
                         const SizedBox(height: 50),
                         _buildSecaoCoordenacao(
                           titulo: 'Ações de todo semestre',
+                          descricao:
+                              '1. Cadastrar o novo semestre.\n2. Importar planos de aula dos alunos.\n3. Montar turmas.',
                           children: [
+                            _buildBotaoPrincipal(
+                              texto: 'Cadastros',
+                              onPressed: _abrirTelaCadastrosIniciais,
+                            ),
+                            const SizedBox(height: 14),
                             _buildBotaoPrincipal(
                               texto: 'Importar planos de aula dos alunos',
                               onPressed: _abrirTelaImportarCsv,
                             ),
                             const SizedBox(height: 14),
                             _buildBotaoPrincipal(
-                              texto: 'Revisar turmas e professores',
+                              texto: 'Montar turmas',
                               onPressed: _abrirTelaCadastrarProfessorNasTurmas,
                             ),
                           ],

@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../../widgets/success_popup.dart';
 import '../../widgets/confirm_delete_popup.dart';
 
@@ -7,12 +9,14 @@ class TurmaProfessorItem {
   String disciplina;
   String turma;
   String professor;
+  String semestre;
 
   TurmaProfessorItem({
     required this.id,
     required this.disciplina,
     required this.turma,
     required this.professor,
+    required this.semestre,
   });
 }
 
@@ -30,19 +34,22 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
       id: 1,
       disciplina: 'Segurança da Informação',
       turma: 'A1',
-      professor: '',
+      professor: 'Profa. Mariana',
+      semestre: '2025.2',
     ),
     TurmaProfessorItem(
       id: 2,
       disciplina: 'Projeto de Aplicação II',
       turma: 'A1',
-      professor: 'Profa. Mariana',
+      professor: 'Prof. Carlos Henrique',
+      semestre: '2025.2',
     ),
     TurmaProfessorItem(
       id: 3,
       disciplina: 'Tópicos em Redes de Computadores I',
       turma: 'A1',
       professor: '',
+      semestre: '2025.2',
     ),
   ];
 
@@ -54,16 +61,80 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
   String? _mensagemPendente;
   bool _mensagemJaExibida = false;
 
-  final TextEditingController _disciplinaController = TextEditingController();
   final TextEditingController _turmaController = TextEditingController();
-  final TextEditingController _professorController = TextEditingController();
+
+  String? _disciplinaSelecionada;
+  String? _professorSelecionado;
+  String? _semestreSelecionado;
+
+  List<String> _disciplinas = [];
+  List<String> _professores = [];
+  List<String> _semestres = [];
+
+  bool _carregandoOpcoes = true;
+
+  static const String _baseUrl = 'http://localhost:3000';
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarOpcoes();
+  }
 
   @override
   void dispose() {
-    _disciplinaController.dispose();
     _turmaController.dispose();
-    _professorController.dispose();
     super.dispose();
+  }
+
+  Future<void> _carregarOpcoes() async {
+    setState(() {
+      _carregandoOpcoes = true;
+    });
+
+    try {
+      final responses = await Future.wait([
+        http.get(Uri.parse('$_baseUrl/disciplinas')),
+        http.get(Uri.parse('$_baseUrl/professores')),
+        http.get(Uri.parse('$_baseUrl/semestres')),
+      ]);
+
+      final disciplinasResponse = responses[0];
+      final professoresResponse = responses[1];
+      final semestresResponse = responses[2];
+
+      if (disciplinasResponse.statusCode == 200 &&
+          professoresResponse.statusCode == 200 &&
+          semestresResponse.statusCode == 200) {
+        final disciplinasJson = jsonDecode(disciplinasResponse.body) as List;
+        final professoresJson = jsonDecode(professoresResponse.body) as List;
+        final semestresJson = jsonDecode(semestresResponse.body) as List;
+
+        setState(() {
+          _disciplinas = disciplinasJson
+              .map((item) => item['nome'].toString())
+              .toList();
+
+          _professores = professoresJson
+              .map((item) => item['nome'].toString())
+              .toList();
+
+          _semestres = semestresJson
+              .map((item) => '${item['ano']}.${item['periodo']}')
+              .toList();
+        });
+      } else {
+        _agendarAviso('Não foi possível carregar disciplinas, professores e semestres.');
+      }
+    } catch (_) {
+      _agendarAviso('Erro ao carregar disciplinas, professores e semestres.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _carregandoOpcoes = false;
+        });
+      }
+    }
   }
 
   void _agendarAviso(String mensagem) {
@@ -81,7 +152,8 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
     return _turmas.where((item) {
       return item.disciplina.toLowerCase().contains(termo) ||
           item.turma.toLowerCase().contains(termo) ||
-          item.professor.toLowerCase().contains(termo);
+          item.professor.toLowerCase().contains(termo) ||
+          item.semestre.toLowerCase().contains(termo);
     }).toList();
   }
 
@@ -89,9 +161,10 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
     setState(() {
       _adicionandoNovo = false;
       _idEmEdicao = item.id;
-      _disciplinaController.text = item.disciplina;
+      _disciplinaSelecionada = item.disciplina;
       _turmaController.text = item.turma;
-      _professorController.text = item.professor;
+      _professorSelecionado = item.professor.isEmpty ? null : item.professor;
+      _semestreSelecionado = item.semestre;
     });
   }
 
@@ -99,9 +172,10 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
     setState(() {
       _idEmEdicao = null;
       _adicionandoNovo = true;
-      _disciplinaController.clear();
+      _disciplinaSelecionada = null;
       _turmaController.clear();
-      _professorController.clear();
+      _professorSelecionado = null;
+      _semestreSelecionado = null;
     });
   }
 
@@ -109,19 +183,24 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
     setState(() {
       _idEmEdicao = null;
       _adicionandoNovo = false;
-      _disciplinaController.clear();
+      _disciplinaSelecionada = null;
       _turmaController.clear();
-      _professorController.clear();
+      _professorSelecionado = null;
+      _semestreSelecionado = null;
     });
   }
 
   void _salvarEdicao(TurmaProfessorItem item) {
-    final disciplina = _disciplinaController.text.trim();
+    final disciplina = _disciplinaSelecionada?.trim() ?? '';
     final turma = _turmaController.text.trim();
-    final professor = _professorController.text.trim();
+    final professor = _professorSelecionado?.trim() ?? '';
+    final semestre = _semestreSelecionado?.trim() ?? '';
 
-    if (disciplina.isEmpty || turma.isEmpty || professor.isEmpty) {
-      _agendarAviso('Preencha disciplina, turma e professor.');
+    if (disciplina.isEmpty ||
+        turma.isEmpty ||
+        professor.isEmpty ||
+        semestre.isEmpty) {
+      _agendarAviso('Preencha disciplina, turma, professor e semestre.');
       return;
     }
 
@@ -129,22 +208,28 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
       item.disciplina = disciplina;
       item.turma = turma;
       item.professor = professor;
+      item.semestre = semestre;
       _idEmEdicao = null;
-      _disciplinaController.clear();
+      _disciplinaSelecionada = null;
       _turmaController.clear();
-      _professorController.clear();
+      _professorSelecionado = null;
+      _semestreSelecionado = null;
     });
 
     _agendarAviso('Informações atualizadas com sucesso.');
   }
 
   void _salvarNovoCadastro() {
-    final disciplina = _disciplinaController.text.trim();
+    final disciplina = _disciplinaSelecionada?.trim() ?? '';
     final turma = _turmaController.text.trim();
-    final professor = _professorController.text.trim();
+    final professor = _professorSelecionado?.trim() ?? '';
+    final semestre = _semestreSelecionado?.trim() ?? '';
 
-    if (disciplina.isEmpty || turma.isEmpty || professor.isEmpty) {
-      _agendarAviso('Preencha disciplina, turma e professor.');
+    if (disciplina.isEmpty ||
+        turma.isEmpty ||
+        professor.isEmpty ||
+        semestre.isEmpty) {
+      _agendarAviso('Preencha disciplina, turma, professor e semestre.');
       return;
     }
 
@@ -155,29 +240,34 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
           disciplina: disciplina,
           turma: turma,
           professor: professor,
+          semestre: semestre,
         ),
       );
       _adicionandoNovo = false;
-      _disciplinaController.clear();
+      _disciplinaSelecionada = null;
       _turmaController.clear();
-      _professorController.clear();
+      _professorSelecionado = null;
+      _semestreSelecionado = null;
     });
 
     _agendarAviso('Registro adicionado com sucesso.');
   }
 
- void _excluirItem(TurmaProfessorItem item) {
+  void _excluirItem(TurmaProfessorItem item) {
     showDeletePopup(
       context,
+      title: 'Excluir registro',
+      message: 'Tem certeza que deseja excluir este registro?',
       onConfirm: () {
         setState(() {
           _turmas.removeWhere((t) => t.id == item.id);
 
           if (_idEmEdicao == item.id) {
             _idEmEdicao = null;
-            _disciplinaController.clear();
+            _disciplinaSelecionada = null;
             _turmaController.clear();
-            _professorController.clear();
+            _professorSelecionado = null;
+            _semestreSelecionado = null;
           }
         });
 
@@ -220,6 +310,62 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
     );
   }
 
+  Widget _buildDropdown({
+    required String hint,
+    required String? value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    final valorValido =
+        value != null && items.contains(value) ? value : null;
+
+    return DropdownButtonFormField<String>(
+      value: valorValido,
+      isExpanded: true,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(
+          fontSize: 12,
+          color: Colors.black38,
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.black12),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.black12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.black54),
+        ),
+      ),
+      items: items
+          .map(
+            (item) => DropdownMenuItem<String>(
+              value: item,
+              child: Text(
+                item,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          )
+          .toList(),
+      onChanged: onChanged,
+    );
+  }
+
   Widget _buildCardVisualizacao(TurmaProfessorItem item) {
     final semProfessor = item.professor.trim().isEmpty;
 
@@ -258,6 +404,14 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
             style: TextStyle(
               fontSize: 13,
               color: semProfessor ? Colors.black54 : Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Semestre: ${item.semestre}',
+            style: const TextStyle(
+              fontSize: 13,
+              color: Colors.black87,
             ),
           ),
           const SizedBox(height: 16),
@@ -335,9 +489,15 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildCampo(
-            controller: _disciplinaController,
+          _buildDropdown(
             hint: 'Disciplina',
+            value: _disciplinaSelecionada,
+            items: _disciplinas,
+            onChanged: (value) {
+              setState(() {
+                _disciplinaSelecionada = value;
+              });
+            },
           ),
           const SizedBox(height: 12),
           _buildCampo(
@@ -345,18 +505,37 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
             hint: 'Turma',
           ),
           const SizedBox(height: 12),
-          _buildCampo(
-            controller: _professorController,
+          _buildDropdown(
             hint: 'Professor',
+            value: _professorSelecionado,
+            items: _professores,
+            onChanged: (value) {
+              setState(() {
+                _professorSelecionado = value;
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildDropdown(
+            hint: 'Semestre',
+            value: _semestreSelecionado,
+            items: _semestres,
+            onChanged: (value) {
+              setState(() {
+                _semestreSelecionado = value;
+              });
+            },
           ),
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: ElevatedButton(
-                  onPressed: isNovo
-                      ? _salvarNovoCadastro
-                      : () => _salvarEdicao(item!),
+                  onPressed: _carregandoOpcoes
+                      ? null
+                      : isNovo
+                          ? _salvarNovoCadastro
+                          : () => _salvarEdicao(item!),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     foregroundColor: Colors.white,
@@ -447,7 +626,7 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
               const SizedBox(height: 20),
               const Center(
                 child: Text(
-                  'Revisar disciplinas,\nturmas e professores',
+                  'Montar turmas',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 30,
@@ -465,7 +644,7 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
                   });
                 },
                 decoration: InputDecoration(
-                  hintText: 'Pesquisar disciplina, turma ou professor',
+                  hintText: 'Pesquisar disciplina, turma, professor ou semestre',
                   hintStyle: const TextStyle(
                     fontSize: 12,
                     color: Colors.black38,
@@ -506,7 +685,7 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
                     ),
                   ),
                   child: const Text(
-                    'Adicionar disciplina, turma e professor',
+                    'Adicionar turma',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
@@ -516,35 +695,40 @@ class _SelectTurmaProfessorPageState extends State<SelectTurmaProfessorPage> {
               ),
               const SizedBox(height: 24),
               Expanded(
-                child: turmasFiltradas.isEmpty && !_adicionandoNovo
+                child: _carregandoOpcoes
                     ? const Center(
-                        child: Text(
-                          'Nenhum registro encontrado.',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.black54,
-                          ),
-                        ),
+                        child: CircularProgressIndicator(),
                       )
-                    : ListView.separated(
-                        itemCount:
-                            turmasFiltradas.length + (_adicionandoNovo ? 1 : 0),
-                        separatorBuilder: (_, __) => const SizedBox(height: 14),
-                        itemBuilder: (context, index) {
-                          if (_adicionandoNovo && index == 0) {
-                            return _buildCardEdicao();
-                          }
+                    : turmasFiltradas.isEmpty && !_adicionandoNovo
+                        ? const Center(
+                            child: Text(
+                              'Nenhum registro encontrado.',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            itemCount:
+                                turmasFiltradas.length + (_adicionandoNovo ? 1 : 0),
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 14),
+                            itemBuilder: (context, index) {
+                              if (_adicionandoNovo && index == 0) {
+                                return _buildCardEdicao();
+                              }
 
-                          final item = turmasFiltradas[
-                              _adicionandoNovo ? index - 1 : index];
+                              final item = turmasFiltradas[
+                                  _adicionandoNovo ? index - 1 : index];
 
-                          if (_idEmEdicao == item.id) {
-                            return _buildCardEdicao(item: item);
-                          }
+                              if (_idEmEdicao == item.id) {
+                                return _buildCardEdicao(item: item);
+                              }
 
-                          return _buildCardVisualizacao(item);
-                        },
-                      ),
+                              return _buildCardVisualizacao(item);
+                            },
+                          ),
               ),
             ],
           ),
