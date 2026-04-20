@@ -16,8 +16,6 @@ class ImportCsvPage extends StatefulWidget {
 }
 
 class _ImportCsvPageState extends State<ImportCsvPage> {
-  final TextEditingController _semestreNomeController = TextEditingController();
-
   bool _carregando = false;
 
   String? _nomeArquivo;
@@ -27,10 +25,54 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
   bool _importacaoComSucesso = false;
   List<String> _erros = [];
 
+  List<String> _semestres = [];
+  String? _semestreSelecionado;
+  bool _carregandoSemestres = true;
+
   @override
-  void dispose() {
-    _semestreNomeController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _carregarSemestres();
+  }
+
+  Future<void> _carregarSemestres() async {
+    setState(() {
+      _carregandoSemestres = true;
+    });
+
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:3000/semestres'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> body = jsonDecode(response.body);
+
+        setState(() {
+          _semestres = body
+              .map((item) => '${item['ano']}.${item['periodo']}')
+              .toList();
+        });
+      } else {
+        setState(() {
+          _mensagemResultado = 'Não foi possível carregar os semestres.';
+          _importacaoComSucesso = false;
+          _erros = [];
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _mensagemResultado = 'Erro ao carregar semestres: $e';
+        _importacaoComSucesso = false;
+        _erros = [];
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _carregandoSemestres = false;
+        });
+      }
+    }
   }
 
   Future<void> _selecionarArquivo() async {
@@ -78,23 +120,11 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
   }
 
   Future<void> _importarCsv() async {
-    final semestreNome = _semestreNomeController.text.trim();
+    final semestreNome = (_semestreSelecionado ?? '').trim();
 
     if (semestreNome.isEmpty) {
       setState(() {
-        _mensagemResultado =
-            'Informe o nome do semestre no formato esperado.';
-        _importacaoComSucesso = false;
-        _erros = [];
-      });
-      return;
-    }
-
-    final semestreValido = RegExp(r'^\d{4}\.\d$').hasMatch(semestreNome);
-
-    if (!semestreValido) {
-      setState(() {
-        _mensagemResultado = 'Informe o semestre no formato 2026.1.';
+        _mensagemResultado = 'Selecione o semestre.';
         _importacaoComSucesso = false;
         _erros = [];
       });
@@ -183,6 +213,65 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
     });
   }
 
+  Widget _buildSemestreDropdown() {
+    final valorValido = _semestres.contains(_semestreSelecionado)
+        ? _semestreSelecionado
+        : null;
+
+    return DropdownButtonFormField<String>(
+      value: valorValido,
+      isExpanded: true,
+      decoration: InputDecoration(
+        hintText: _carregandoSemestres
+            ? 'Carregando semestres...'
+            : 'Selecione o semestre',
+        hintStyle: const TextStyle(
+          fontSize: 12,
+          color: Colors.black38,
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.black12),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.black12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.black54),
+        ),
+      ),
+      items: _semestres
+          .map(
+            (semestre) => DropdownMenuItem<String>(
+              value: semestre,
+              child: Text(
+                semestre,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          )
+          .toList(),
+      onChanged: _carregandoSemestres
+          ? null
+          : (value) {
+              setState(() {
+                _semestreSelecionado = value;
+              });
+            },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -225,9 +314,7 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
                     children: [
                       _buildFieldLabel('Nome do semestre'),
                       const SizedBox(height: 8),
-                      SemesterNameField(
-                        controller: _semestreNomeController,
-                      ),
+                      _buildSemestreDropdown(),
                       const SizedBox(height: 62),
                       _buildFieldLabel('Arquivo CSV'),
                       const SizedBox(height: 8),
@@ -336,7 +423,9 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _carregando ? null : _importarCsv,
+                  onPressed: _carregando || _carregandoSemestres
+                      ? null
+                      : _importarCsv,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     foregroundColor: Colors.white,
