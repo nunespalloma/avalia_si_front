@@ -53,6 +53,7 @@ class _LoginPageState extends State<LoginPage> {
 
       final usuario = response['usuario'] as Map<String, dynamic>;
       final bool isCoordenacao = usuario['is_coordenacao'] == true;
+      final int? alunoIdLogado = usuario['aluno_id'] as int?;
 
       setState(() {
         _errorMessage = null;
@@ -64,6 +65,7 @@ class _LoginPageState extends State<LoginPage> {
           builder: (_) => HomePage(
             mensagemSucesso: 'Login realizado com sucesso!',
             isCoordenacao: isCoordenacao,
+            alunoIdLogado: alunoIdLogado,
           ),
         ),
       );

@@ -18,7 +18,8 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _matriculaController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
-  final TextEditingController _confirmarSenhaController = TextEditingController();
+  final TextEditingController _confirmarSenhaController =
+      TextEditingController();
 
   final AuthService _authService = AuthService();
 
@@ -59,7 +60,7 @@ class _SignUpPageState extends State<SignUpPage> {
     });
 
     try {
-      await _authService.cadastrar(
+      final response = await _authService.cadastrar(
         nome: _nomeController.text.trim(),
         email: _emailController.text.trim(),
         matricula: _matriculaController.text.trim(),
@@ -68,12 +69,16 @@ class _SignUpPageState extends State<SignUpPage> {
 
       if (!mounted) return;
 
+      final int? alunoIdLogado =
+          response['aluno_id'] ?? response['aluno']?['id'];
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => const HomePage(
+          builder: (_) => HomePage(
             mensagemSucesso: 'Cadastro realizado com sucesso!',
             isCoordenacao: false,
+            alunoIdLogado: alunoIdLogado,
           ),
         ),
       );

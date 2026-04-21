@@ -30,7 +30,7 @@ class AuthService {
     }
   }
 
-  Future<String> cadastrar({
+  Future<Map<String, dynamic>> cadastrar({
     required String nome,
     required String email,
     required String matricula,
@@ -38,26 +38,7 @@ class AuthService {
   }) async {
     final url = Uri.parse('$baseUrl/alunos');
 
-    final response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: jsonEncode({
-        'usuario': {
-          'nome': nome,
-          'email': email,
-          'password': senha,
-          'password_confirmation': senha,
-        },
-        'aluno': {
-          'matricula': matricula,
-        }
-      }),
-    );
-
-    print('ENVIANDO: ${jsonEncode({
+    final payload = {
       'usuario': {
         'nome': nome,
         'email': email,
@@ -67,20 +48,37 @@ class AuthService {
       'aluno': {
         'matricula': matricula,
       }
-    })}');
+    };
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode(payload),
+    );
+
+    print('ENVIANDO: ${jsonEncode(payload)}');
     print('STATUS: ${response.statusCode}');
     print('BODY: ${response.body}');
 
     final body = response.body.isNotEmpty ? jsonDecode(response.body) : null;
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      return body?['message'] ?? 'Cadastro realizado com sucesso';
+      if (body is Map<String, dynamic>) {
+        return body;
+      }
+
+      return {
+        'message': 'Cadastro realizado com sucesso',
+      };
     } else {
       throw Exception(
         body?['error'] ??
             (body != null && body['errors'] is List
-              ? body['errors'].join(', ')
-              : null) ??
+                ? body['errors'].join(', ')
+                : null) ??
             body?['message'] ??
             'Erro ao realizar cadastro',
       );

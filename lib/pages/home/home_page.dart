@@ -12,12 +12,14 @@ class HomePage extends StatefulWidget {
   final String? mensagemSucesso;
   final bool jaAvaliouUltimoSemestre;
   final bool isCoordenacao;
+  final int? alunoIdLogado;
 
   const HomePage({
     super.key,
     this.mensagemSucesso,
     this.jaAvaliouUltimoSemestre = false,
     this.isCoordenacao = false,
+    this.alunoIdLogado,
   });
 
   @override
@@ -51,10 +53,20 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _abrirTelaFornecerAvaliacao() async {
+    if (widget.alunoIdLogado == null) {
+      showTopMessageBanner(
+        context,
+        message: 'Não foi possível identificar o aluno logado.',
+      );
+      return;
+    }
+
     final concluiuTodas = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => const ProvideEvaluationPage(),
+        builder: (_) => ProvideEvaluationPage(
+          alunoId: widget.alunoIdLogado!,
+        ),
       ),
     );
 

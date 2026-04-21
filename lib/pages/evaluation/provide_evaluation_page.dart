@@ -1,52 +1,66 @@
 import 'package:flutter/material.dart';
 import 'evaluation_form_page.dart';
 import '../../widgets/success_popup.dart';
-
-class TurmaAvaliacao {
-  final String disciplina;
-  final String turma;
-  bool avaliada;
-
-  TurmaAvaliacao({
-    required this.disciplina,
-    required this.turma,
-    required this.avaliada,
-  });
-}
+import '../../widgets/error_message.dart';
+import '../../services/provide_evaluation_service.dart';
 
 class ProvideEvaluationPage extends StatefulWidget {
-  const ProvideEvaluationPage({super.key});
+  final int alunoId;
+
+  const ProvideEvaluationPage({
+    super.key,
+    required this.alunoId,
+  });
 
   @override
   State<ProvideEvaluationPage> createState() => _ProvideEvaluationPageState();
 }
 
 class _ProvideEvaluationPageState extends State<ProvideEvaluationPage> {
-  final List<TurmaAvaliacao> _turmasSemestreAnterior = [
-    TurmaAvaliacao(
-      disciplina: 'Algoritmos e Programação',
-      turma: 'T1 - Prof. Carlos',
-      avaliada: true,
-    ),
-    TurmaAvaliacao(
-      disciplina: 'Banco de Dados',
-      turma: 'T2 - Profa. Mariana',
-      avaliada: false,
-    ),
-    TurmaAvaliacao(
-      disciplina: 'Engenharia de Software',
-      turma: 'T1 - Prof. Roberto',
-      avaliada: false,
-    ),
-    TurmaAvaliacao(
-      disciplina: 'Estrutura de Dados',
-      turma: 'T3 - Profa. Renata',
-      avaliada: true,
-    ),
-  ];
+  List<TurmaAvaliacao> _turmasSemestreAnterior = [];
+  bool _carregando = true;
+  String? _mensagemErro;
 
   bool get _todasAvaliadas =>
+      _turmasSemestreAnterior.isNotEmpty &&
       _turmasSemestreAnterior.every((item) => item.avaliada);
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarTurmas();
+  }
+
+  Future<void> _carregarTurmas() async {
+    setState(() {
+      _carregando = true;
+      _mensagemErro = null;
+    });
+
+    try {
+      final turmas = await ProvideEvaluationService.listarTurmasParaAvaliacao(
+        alunoId: widget.alunoId,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _turmasSemestreAnterior = turmas;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _mensagemErro = e.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _carregando = false;
+        });
+      }
+    }
+  }
 
   Future<void> _abrirTelaAvaliacao(TurmaAvaliacao item) async {
     final avaliacaoEnviada = await Navigator.push<bool>(
@@ -60,9 +74,9 @@ class _ProvideEvaluationPageState extends State<ProvideEvaluationPage> {
     );
 
     if (avaliacaoEnviada == true) {
-      setState(() {
-        item.avaliada = true;
-      });
+      await _carregarTurmas();
+
+      if (!mounted) return;
 
       showTopMessageBanner(
         context,
@@ -129,9 +143,7 @@ class _ProvideEvaluationPageState extends State<ProvideEvaluationPage> {
                 ),
                 onPressed: _voltarParaHome,
               ),
-
               const SizedBox(height: 24),
-
               const Center(
                 child: Text(
                   'Fornecer\navaliação',
@@ -144,9 +156,7 @@ class _ProvideEvaluationPageState extends State<ProvideEvaluationPage> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
-
               const Text(
                 'Avalie as turmas cursadas no semestre anterior.',
                 textAlign: TextAlign.center,
@@ -156,45 +166,53 @@ class _ProvideEvaluationPageState extends State<ProvideEvaluationPage> {
                   height: 1.5,
                 ),
               ),
-
               const SizedBox(height: 28),
-
               Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      _buildSectionTitle(
-                        'Turmas pendentes',
-                        pendentes.length,
+                child: _carregando
+                    ? const Center(
+                        child: CircularProgressIndicator(),
+                      )
+                    : SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            if (_mensagemErro != null) ...[
+                              ErrorMessage(
+                                message: _mensagemErro!,
+                                onClose: () {
+                                  setState(() {
+                                    _mensagemErro = null;
+                                  });
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                            _buildSectionTitle(
+                              'Turmas pendentes',
+                              pendentes.length,
+                            ),
+                            const SizedBox(height: 12),
+                            if (pendentes.isEmpty)
+                              _buildEmptyState(
+                                'Você já avaliou todas as turmas.',
+                              )
+                            else
+                              ...pendentes.map(_buildTurmaCardPendente),
+                            const SizedBox(height: 24),
+                            _buildSectionTitle(
+                              'Turmas avaliadas',
+                              avaliadas.length,
+                            ),
+                            const SizedBox(height: 12),
+                            if (avaliadas.isEmpty)
+                              _buildEmptyState(
+                                'Nenhuma turma avaliada ainda.',
+                              )
+                            else
+                              ...avaliadas.map(_buildTurmaCardAvaliada),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 12),
-
-                      if (pendentes.isEmpty)
-                        _buildEmptyState(
-                          'Você já avaliou todas as turmas.',
-                        )
-                      else
-                        ...pendentes.map(_buildTurmaCardPendente),
-
-                      const SizedBox(height: 24),
-
-                      _buildSectionTitle(
-                        'Turmas avaliadas',
-                        avaliadas.length,
-                      ),
-                      const SizedBox(height: 12),
-
-                      if (avaliadas.isEmpty)
-                        _buildEmptyState(
-                          'Nenhuma turma avaliada ainda.',
-                        )
-                      else
-                        ...avaliadas.map(_buildTurmaCardAvaliada),
-                    ],
-                  ),
-                ),
               ),
-
               if (_todasAvaliadas) ...[
                 const SizedBox(height: 8),
                 _buildBotaoPrincipal(
@@ -202,7 +220,6 @@ class _ProvideEvaluationPageState extends State<ProvideEvaluationPage> {
                   onPressed: _voltarParaHome,
                 ),
               ],
-
               const SizedBox(height: 20),
             ],
           ),
@@ -257,7 +274,7 @@ class _ProvideEvaluationPageState extends State<ProvideEvaluationPage> {
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
           child: Text(
-            item.turma,
+            '${item.turma} • ${item.semestre}',
             style: const TextStyle(
               fontSize: 13,
               color: Colors.black54,
@@ -315,7 +332,7 @@ class _ProvideEvaluationPageState extends State<ProvideEvaluationPage> {
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
           child: Text(
-            item.turma,
+            '${item.turma} • ${item.semestre}',
             style: const TextStyle(
               fontSize: 13,
               color: Colors.black54,
