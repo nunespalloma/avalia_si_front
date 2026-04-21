@@ -1,9 +1,9 @@
-import 'dart:convert';
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../../widgets/error_message.dart';
+import '../../widgets/success_popup.dart';
+import '../../services/import_plano_aulas_service.dart';
 
 class ImportCsvPage extends StatefulWidget {
   const ImportCsvPage({super.key});
@@ -22,9 +22,11 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
   bool _importacaoComSucesso = false;
   List<String> _erros = [];
 
-  List<String> _semestres = [];
-  String? _semestreSelecionado;
+  List<SemestreOpcao> _semestres = [];
+  int? _semestreSelecionadoId;
   bool _carregandoSemestres = true;
+
+  bool _mensagemSucessoJaExibida = false;
 
   @override
   void initState() {
@@ -38,30 +40,21 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
     });
 
     try {
-      final response = await http.get(
-        Uri.parse('http://localhost:3000/semestres'),
-      );
+      final semestres = await ImportPlanoAulasService.listarSemestres();
 
-      if (response.statusCode == 200) {
-        final List<dynamic> body = jsonDecode(response.body);
+      if (!mounted) return;
 
-        setState(() {
-          _semestres = body
-              .map((item) => '${item['ano']}.${item['periodo']}')
-              .toList();
-        });
-      } else {
-        setState(() {
-          _mensagemResultado = 'Não foi possível carregar os semestres.';
-          _importacaoComSucesso = false;
-          _erros = [];
-        });
-      }
-    } catch (e) {
       setState(() {
-        _mensagemResultado = 'Erro ao carregar semestres: $e';
+        _semestres = semestres;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _mensagemResultado = e.toString().replaceFirst('Exception: ', '');
         _importacaoComSucesso = false;
         _erros = [];
+        _mensagemSucessoJaExibida = false;
       });
     } finally {
       if (mounted) {
@@ -94,6 +87,7 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
               'Não foi possível ler o arquivo selecionado. Tente novamente.';
           _importacaoComSucesso = false;
           _erros = [];
+          _mensagemSucessoJaExibida = false;
         });
         return;
       }
@@ -104,6 +98,7 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
         _mensagemResultado = null;
         _importacaoComSucesso = false;
         _erros = [];
+        _mensagemSucessoJaExibida = false;
       });
     } catch (e) {
       setState(() {
@@ -112,18 +107,18 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
         _mensagemResultado = 'Erro ao selecionar o arquivo: $e';
         _importacaoComSucesso = false;
         _erros = [];
+        _mensagemSucessoJaExibida = false;
       });
     }
   }
 
   Future<void> _importarCsv() async {
-    final semestreNome = (_semestreSelecionado ?? '').trim();
-
-    if (semestreNome.isEmpty) {
+    if (_semestreSelecionadoId == null) {
       setState(() {
         _mensagemResultado = 'Selecione o semestre.';
         _importacaoComSucesso = false;
         _erros = [];
+        _mensagemSucessoJaExibida = false;
       });
       return;
     }
@@ -133,6 +128,7 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
         _mensagemResultado = 'Selecione um arquivo CSV antes de continuar.';
         _importacaoComSucesso = false;
         _erros = [];
+        _mensagemSucessoJaExibida = false;
       });
       return;
     }
@@ -142,54 +138,40 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
       _mensagemResultado = null;
       _importacaoComSucesso = false;
       _erros = [];
+      _mensagemSucessoJaExibida = false;
     });
 
     try {
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('http://localhost:3000/coordenacao/importar_turmas_csv'),
+      final body = await ImportPlanoAulasService.importarPlanoAulas(
+        semestreId: _semestreSelecionadoId!,
+        arquivoBytes: _arquivoBytes!,
+        nomeArquivo: _nomeArquivo!,
       );
 
-      request.fields['semestre_nome'] = semestreNome;
+      if (!mounted) return;
 
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'arquivo',
-          _arquivoBytes!,
-          filename: _nomeArquivo!,
-        ),
-      );
+      final List<dynamic> errosResposta =
+          body['erros'] is List ? body['erros'] : [];
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+      final bool sucesso = errosResposta.isEmpty;
 
-      final Map<String, dynamic> body =
-          response.body.isNotEmpty ? jsonDecode(response.body) : {};
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        setState(() {
-          _importacaoComSucesso = true;
-          _mensagemResultado =
-              body['message'] ?? 'CSV importado com sucesso.';
-          _erros = [];
-        });
-      } else {
-        final errosResposta = body['erros'];
-
-        setState(() {
-          _importacaoComSucesso = false;
-          _mensagemResultado =
-              body['message'] ?? body['error'] ?? 'Erro ao importar CSV.';
-          _erros = errosResposta is List
-              ? errosResposta.map((e) => e.toString()).toList()
-              : [];
-        });
-      }
+      setState(() {
+        _importacaoComSucesso = sucesso;
+        _mensagemResultado = body['message'] ??
+            (sucesso
+                ? 'Planos de aula importados com sucesso.'
+                : 'Importação concluída com pendências.');
+        _erros = errosResposta.map((e) => e.toString()).toList();
+        _mensagemSucessoJaExibida = false;
+      });
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         _importacaoComSucesso = false;
-        _mensagemResultado = 'Erro ao conectar com o servidor: $e';
+        _mensagemResultado = e.toString().replaceFirst('Exception: ', '');
         _erros = [];
+        _mensagemSucessoJaExibida = false;
       });
     } finally {
       if (mounted) {
@@ -207,15 +189,18 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
       _mensagemResultado = null;
       _importacaoComSucesso = false;
       _erros = [];
+      _mensagemSucessoJaExibida = false;
     });
   }
 
   Widget _buildSemestreDropdown() {
-    final valorValido = _semestres.contains(_semestreSelecionado)
-        ? _semestreSelecionado
-        : null;
+    final ids = _semestres.map((s) => s.id).toList();
+    final valorValido =
+        _semestreSelecionadoId != null && ids.contains(_semestreSelecionadoId)
+            ? _semestreSelecionadoId
+            : null;
 
-    return DropdownButtonFormField<String>(
+    return DropdownButtonFormField<int>(
       value: valorValido,
       isExpanded: true,
       decoration: InputDecoration(
@@ -247,10 +232,10 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
       ),
       items: _semestres
           .map(
-            (semestre) => DropdownMenuItem<String>(
-              value: semestre,
+            (semestre) => DropdownMenuItem<int>(
+              value: semestre.id,
               child: Text(
-                semestre,
+                semestre.nome,
                 style: const TextStyle(
                   fontSize: 14,
                   color: Colors.black,
@@ -263,7 +248,7 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
           ? null
           : (value) {
               setState(() {
-                _semestreSelecionado = value;
+                _semestreSelecionadoId = value;
               });
             },
     );
@@ -271,6 +256,25 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_mensagemSucessoJaExibida &&
+        _mensagemResultado != null &&
+        _importacaoComSucesso) {
+      _mensagemSucessoJaExibida = true;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _mensagemResultado == null) return;
+
+        showTopMessageBanner(
+          context,
+          message: _mensagemResultado!,
+        );
+
+        setState(() {
+          _mensagemResultado = null;
+        });
+      });
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
@@ -404,10 +408,6 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
                             });
                           },
                         ),
-                      if (_mensagemResultado != null && _importacaoComSucesso) ...[
-                        const SizedBox(height: 20),
-                        _buildResultCard(),
-                      ],
                       if (_erros.isNotEmpty) ...[
                         const SizedBox(height: 16),
                         _buildErrorsCard(),
@@ -517,34 +517,6 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildResultCard() {
-    final Color corFundo = _importacaoComSucesso
-        ? const Color(0xFFF2F8F2)
-        : const Color(0xFFFFF4F4);
-
-    final Color corBorda = _importacaoComSucesso
-        ? const Color(0xFFB9D7BC)
-        : const Color(0xFFE3B5B5);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-      decoration: BoxDecoration(
-        color: corFundo,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: corBorda),
-      ),
-      child: Text(
-        _mensagemResultado!,
-        style: const TextStyle(
-          fontSize: 13,
-          color: Colors.black87,
-          height: 1.4,
-        ),
       ),
     );
   }
