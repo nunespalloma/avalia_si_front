@@ -182,17 +182,6 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
     }
   }
 
-  void _limparArquivo() {
-    setState(() {
-      _nomeArquivo = null;
-      _arquivoBytes = null;
-      _mensagemResultado = null;
-      _importacaoComSucesso = false;
-      _erros = [];
-      _mensagemSucessoJaExibida = false;
-    });
-  }
-
   Widget _buildSemestreDropdown() {
     final ids = _semestres.map((s) => s.id).toList();
     final valorValido =
@@ -343,56 +332,28 @@ class _ImportCsvPageState extends State<ImportCsvPage> {
                               ),
                             ),
                             const SizedBox(height: 14),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: OutlinedButton(
-                                    onPressed:
-                                        _carregando ? null : _selecionarArquivo,
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: Colors.black,
-                                      side: const BorderSide(
-                                        color: Colors.black12,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      'Selecionar arquivo',
-                                      style: TextStyle(fontSize: 13),
-                                    ),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton(
+                                onPressed:
+                                    _carregando ? null : _selecionarArquivo,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.black,
+                                  side: const BorderSide(
+                                    color: Colors.black12,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
-                                if (_nomeArquivo != null) ...[
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: OutlinedButton(
-                                      onPressed:
-                                          _carregando ? null : _limparArquivo,
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: Colors.black54,
-                                        side: const BorderSide(
-                                          color: Colors.black12,
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 14,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                      ),
-                                      child: const Text(
-                                        'Remover',
-                                        style: TextStyle(fontSize: 13),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
+                                child: const Text(
+                                  'Selecionar arquivo',
+                                  style: TextStyle(fontSize: 13),
+                                ),
+                              ),
                             ),
                           ],
                         ),
