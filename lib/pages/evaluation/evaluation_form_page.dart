@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../widgets/evaluation_slider_item.dart';
+import '../../widgets/success_popup.dart';
+import '../../services/evaluation_form_service.dart';
 
 class EvaluationFormPage extends StatefulWidget {
+  final int alunoId;
+  final int planoAulaAlunoId;
   final String disciplina;
   final String turma;
 
   const EvaluationFormPage({
     super.key,
+    required this.alunoId,
+    required this.planoAulaAlunoId,
     required this.disciplina,
     required this.turma,
   });
@@ -26,6 +32,8 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
   double assiduidadeProfessor = 2;
 
   final TextEditingController comentarioController = TextEditingController();
+
+  bool _carregando = false;
 
   @override
   void dispose() {
@@ -47,6 +55,45 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
         return 'Excelente';
       default:
         return '';
+    }
+  }
+
+  Future<void> _enviarAvaliacao() async {
+    setState(() {
+      _carregando = true;
+    });
+
+    try {
+      await EvaluationFormService.enviarAvaliacao(
+        alunoId: widget.alunoId,
+        planoAulaAlunoId: widget.planoAulaAlunoId,
+        avaliacaoGeral: avaliacaoGeral,
+        organizacaoConteudo: organizacaoConteudo.round(),
+        quantidadeExercicios: quantidadeExercicios.round(),
+        avaliacaoCondizente: avaliacaoCondizente.round(),
+        professorRespeitoso: relacaoRespeito.round(),
+        professorSolicito: professorSolicito.round(),
+        assiduidadeProfessor: assiduidadeProfessor.round(),
+        aspectosGerais: comentarioController.text.trim(),
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+
+      final mensagem = e.toString().replaceFirst('Exception: ', '');
+
+      showTopMessageBanner(
+        context,
+        message: mensagem,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _carregando = false;
+        });
+      }
     }
   }
 
@@ -123,7 +170,7 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: onPressed,
+        onPressed: _carregando ? null : onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.black,
           foregroundColor: Colors.white,
@@ -133,13 +180,22 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
             borderRadius: BorderRadius.circular(6),
           ),
         ),
-        child: Text(
-          texto,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
+        child: _carregando
+            ? const SizedBox(
+                height: 18,
+                width: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Text(
+                texto,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
       ),
     );
   }
@@ -167,9 +223,7 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 12),
-
               Text(
                 widget.disciplina,
                 textAlign: TextAlign.center,
@@ -180,9 +234,7 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                   height: 1.3,
                 ),
               ),
-
               const SizedBox(height: 8),
-
               Text(
                 widget.turma,
                 textAlign: TextAlign.center,
@@ -191,16 +243,13 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                   color: Colors.black54,
                 ),
               ),
-
               const SizedBox(height: 24),
-
               Expanded(
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
                       _buildStarRating(),
                       const SizedBox(height: 26),
-
                       EvaluationSliderItem(
                         titulo: 'Organização do conteúdo:',
                         valor: organizacaoConteudo,
@@ -214,7 +263,6 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                         labelDireita: 'Boa',
                       ),
                       const SizedBox(height: 26),
-
                       EvaluationSliderItem(
                         titulo: 'Quantidade de exercícios:',
                         valor: quantidadeExercicios,
@@ -228,7 +276,6 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                         labelDireita: 'Suficiente',
                       ),
                       const SizedBox(height: 26),
-
                       EvaluationSliderItem(
                         titulo: 'Avaliação condizente com o conteúdo dado:',
                         valor: avaliacaoCondizente,
@@ -242,7 +289,6 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                         labelDireita: 'Sim',
                       ),
                       const SizedBox(height: 26),
-
                       EvaluationSliderItem(
                         titulo:
                             'Relação com o(a) professor(a) no quesito respeito:',
@@ -257,7 +303,6 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                         labelDireita: 'Boa',
                       ),
                       const SizedBox(height: 26),
-
                       EvaluationSliderItem(
                         titulo: 'Professor(a) foi solícito(a)?',
                         valor: professorSolicito,
@@ -271,7 +316,6 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                         labelDireita: 'Sim',
                       ),
                       const SizedBox(height: 26),
-
                       EvaluationSliderItem(
                         titulo: 'Assiduidade do(a) professor(a):',
                         valor: assiduidadeProfessor,
@@ -285,7 +329,6 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                         labelDireita: 'Boa',
                       ),
                       const SizedBox(height: 30),
-
                       const Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
@@ -297,9 +340,7 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 12),
-
                       TextFormField(
                         controller: comentarioController,
                         minLines: 4,
@@ -333,20 +374,15 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 24),
                     ],
                   ),
                 ),
               ),
-
               _buildBotaoPrincipal(
                 texto: 'Enviar avaliação',
-                onPressed: () {
-                  Navigator.pop(context, true);
-                },
+                onPressed: _enviarAvaliacao,
               ),
-
               const SizedBox(height: 20),
             ],
           ),

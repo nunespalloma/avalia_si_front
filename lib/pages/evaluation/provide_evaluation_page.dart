@@ -67,6 +67,8 @@ class _ProvideEvaluationPageState extends State<ProvideEvaluationPage> {
       context,
       MaterialPageRoute(
         builder: (_) => EvaluationFormPage(
+          alunoId: widget.alunoId,
+          planoAulaAlunoId: item.id,
           disciplina: item.disciplina,
           turma: item.turma,
         ),
