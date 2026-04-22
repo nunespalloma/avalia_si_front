@@ -1,17 +1,7 @@
 import 'package:flutter/material.dart';
 import 'evaluation_dashboard_page.dart';
-
-class TurmaResultado {
-  final String disciplina;
-  final String turma;
-  final String professor;
-
-  TurmaResultado({
-    required this.disciplina,
-    required this.turma,
-    required this.professor,
-  });
-}
+import '../../widgets/error_message.dart';
+import '../../services/view_evaluation_service.dart';
 
 class ViewEvaluationPage extends StatefulWidget {
   const ViewEvaluationPage({super.key});
@@ -24,23 +14,15 @@ class _ViewEvaluationPageState extends State<ViewEvaluationPage> {
   final TextEditingController _buscaController = TextEditingController();
   String _termoBusca = '';
 
-  final List<TurmaResultado> _turmasAvaliadas = [
-    TurmaResultado(
-      disciplina: 'Algoritmos e Programação',
-      turma: 'T1',
-      professor: 'Prof. Carlos',
-    ),
-    TurmaResultado(
-      disciplina: 'Estrutura de Dados',
-      turma: 'T3',
-      professor: 'Profa. Renata',
-    ),
-    TurmaResultado(
-      disciplina: 'Banco de Dados',
-      turma: 'T2',
-      professor: 'Profa. Mariana',
-    ),
-  ];
+  List<TurmaResultado> _turmasAvaliadas = [];
+  bool _carregando = true;
+  String? _mensagemErro;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarTurmas();
+  }
 
   @override
   void dispose() {
@@ -48,11 +30,41 @@ class _ViewEvaluationPageState extends State<ViewEvaluationPage> {
     super.dispose();
   }
 
+  Future<void> _carregarTurmas() async {
+    setState(() {
+      _carregando = true;
+      _mensagemErro = null;
+    });
+
+    try {
+      final turmas = await ViewEvaluationService.listarTurmasComAvaliacoes();
+
+      if (!mounted) return;
+
+      setState(() {
+        _turmasAvaliadas = turmas;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _mensagemErro = e.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _carregando = false;
+        });
+      }
+    }
+  }
+
   void _abrirDashboard(TurmaResultado item) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => EvaluationDashboardPage(
+          turmaId: item.id,
           disciplina: item.disciplina,
           turma: item.turma,
           professor: item.professor,
@@ -101,9 +113,7 @@ class _ViewEvaluationPageState extends State<ViewEvaluationPage> {
                 ),
                 onPressed: _voltarParaHome,
               ),
-
               const SizedBox(height: 24),
-
               const Center(
                 child: Text(
                   'Ver Avaliações',
@@ -116,9 +126,7 @@ class _ViewEvaluationPageState extends State<ViewEvaluationPage> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
-
               const Text(
                 'Escolha uma turma já avaliada para visualizar os resultados.',
                 textAlign: TextAlign.center,
@@ -128,9 +136,7 @@ class _ViewEvaluationPageState extends State<ViewEvaluationPage> {
                   height: 1.5,
                 ),
               ),
-
               const SizedBox(height: 20),
-
               TextField(
                 controller: _buscaController,
                 onChanged: (value) {
@@ -190,32 +196,43 @@ class _ViewEvaluationPageState extends State<ViewEvaluationPage> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
-
               Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      _buildSectionTitle(
-                        'Turmas disponíveis',
-                        turmasExibidas.length,
+                child: _carregando
+                    ? const Center(
+                        child: CircularProgressIndicator(),
+                      )
+                    : SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            if (_mensagemErro != null) ...[
+                              ErrorMessage(
+                                message: _mensagemErro!,
+                                onClose: () {
+                                  setState(() {
+                                    _mensagemErro = null;
+                                  });
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                            _buildSectionTitle(
+                              'Turmas disponíveis',
+                              turmasExibidas.length,
+                            ),
+                            const SizedBox(height: 12),
+                            if (turmasExibidas.isEmpty)
+                              _buildEmptyState(
+                                _termoBusca.isEmpty
+                                    ? 'Você ainda não possui turmas avaliadas para visualizar.'
+                                    : 'Nenhuma turma encontrada para essa pesquisa.',
+                              )
+                            else
+                              ...turmasExibidas.map(_buildTurmaCardResultado),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 12),
-
-                      if (turmasExibidas.isEmpty)
-                        _buildEmptyState(
-                          _termoBusca.isEmpty
-                              ? 'Você ainda não possui turmas avaliadas para visualizar.'
-                              : 'Nenhuma turma encontrada para essa pesquisa.',
-                        )
-                      else
-                        ...turmasExibidas.map(_buildTurmaCardResultado),
-                    ],
-                  ),
-                ),
               ),
-
               const SizedBox(height: 20),
             ],
           ),
