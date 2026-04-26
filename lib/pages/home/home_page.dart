@@ -7,6 +7,7 @@ import '../evaluation/view_evaluation_page.dart';
 import '../coordenacao/import_csv_page.dart';
 import '../coordenacao/review_disciplina_turma_professor_page.dart';
 import '../coordenacao/select_cadastros_base_page.dart';
+import '../../services/provide_evaluation_service.dart';
 
 class HomePage extends StatefulWidget {
   final String? mensagemSucesso;
@@ -34,6 +35,26 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _jaAvaliouUltimoSemestre = widget.jaAvaliouUltimoSemestre;
+    if (!widget.isCoordenacao && widget.alunoIdLogado != null) {
+      _atualizarStatusAvaliacoes();
+    }
+  }
+
+  Future<void> _atualizarStatusAvaliacoes() async {
+    try {
+      final turmas = await ProvideEvaluationService.listarTurmasParaAvaliacao(
+        alunoId: widget.alunoIdLogado!,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _jaAvaliouUltimoSemestre =
+            turmas.isNotEmpty && turmas.every((item) => item.avaliada);
+      });
+    } catch (_) {
+      // Mantém o estado atual caso não consiga carregar.
+    }
   }
 
   @override
@@ -74,6 +95,8 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _jaAvaliouUltimoSemestre = true;
       });
+    } else {
+      await _atualizarStatusAvaliacoes();
     }
   }
 
