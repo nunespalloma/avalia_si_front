@@ -112,35 +112,69 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage> {
 
   Widget _buildSummaryCard(String titulo, String valor) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.black12),
+      child: SizedBox(
+        height: 96,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.black12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 34,
+                child: Text(
+                  titulo,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black54,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                valor,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              titulo,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black54,
-                height: 1.3,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              valor,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-                height: 1.2,
-              ),
-            ),
-          ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyMessage(String texto) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 18,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.black12),
+      ),
+      child: Text(
+        texto,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 13,
+          color: Colors.black54,
+          height: 1.4,
         ),
       ),
     );
@@ -149,6 +183,8 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage> {
   @override
   Widget build(BuildContext context) {
     final comentarios = _dados?.comentarios ?? [];
+    final motivosTrancamento = _dados?.motivosTrancamento ?? [];
+    final pontosQueAfligiram = _dados?.pontosQueAfligiram ?? [];
 
     final comentariosExibidos = _mostrarTodosComentarios
         ? comentarios
@@ -288,10 +324,24 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage> {
                                         _dados!.organizacaoConteudo,
                                         esquerda: 'Ruim',
                                         centro: 'Razoável',
-                                        direita: 'Boa',
+                                        direita: 'Excelente',
                                       ),
                                     ),
                                     const SizedBox(width: 12),
+                                    _buildSummaryCard(
+                                      'Didática na passagem',
+                                      _valorParaTexto(
+                                        _dados!.passagemConteudo,
+                                        esquerda: 'Ruim',
+                                        centro: 'Razoável',
+                                        direita: 'Excelente',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
                                     _buildSummaryCard(
                                       'Quantidade de exercícios',
                                       _valorParaTexto(
@@ -301,28 +351,14 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage> {
                                         direita: 'Suficiente',
                                       ),
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
+                                    const SizedBox(width: 12),
                                     _buildSummaryCard(
                                       'Avaliação condizente',
                                       _valorParaTexto(
                                         _dados!.avaliacaoCondizente,
                                         esquerda: 'Não',
-                                        centro: 'Média',
+                                        centro: 'Razoável',
                                         direita: 'Sim',
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    _buildSummaryCard(
-                                      'Relação com respeito',
-                                      _valorParaTexto(
-                                        _dados!.professorRespeitoso,
-                                        esquerda: 'Ruim',
-                                        centro: 'Média',
-                                        direita: 'Boa',
                                       ),
                                     ),
                                   ],
@@ -331,26 +367,120 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage> {
                                 Row(
                                   children: [
                                     _buildSummaryCard(
+                                      'Relação com respeito',
+                                      _valorParaTexto(
+                                        _dados!.professorRespeitoso,
+                                        esquerda: 'Ruim',
+                                        centro: 'Razoável',
+                                        direita: 'Excelente',
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    _buildSummaryCard(
                                       'Professor(a) foi solícito(a)?',
                                       _valorParaTexto(
                                         _dados!.professorSolicito,
                                         esquerda: 'Não',
-                                        centro: 'Médio',
+                                        centro: 'Razoável',
                                         direita: 'Sim',
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
                                     _buildSummaryCard(
                                       'Assiduidade do(a) professor(a)',
                                       _valorParaTexto(
                                         _dados!.assiduidadeProfessor,
                                         esquerda: 'Ruim',
-                                        centro: 'Média',
-                                        direita: 'Boa',
+                                        centro: 'Razoável',
+                                        direita: 'Excelente',
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    _buildSummaryCard(
+                                      'Teoria x prática',
+                                      _valorParaTexto(
+                                        _dados!.teoriaPratica,
+                                        esquerda: 'Ruim',
+                                        centro: 'Razoável',
+                                        direita: 'Excelente',
                                       ),
                                     ),
                                   ],
                                 ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    _buildSummaryCard(
+                                      '% que trancou',
+                                      _dados!
+                                          .percentualTrancouTurmaFormatado,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    _buildSummaryCard(
+                                      '% que acredita passar',
+                                      _dados!
+                                          .percentualAcreditaPassarFormatado,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 24),
+                                const Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    'Motivos de trancamento',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                if (motivosTrancamento.isEmpty)
+                                  _buildEmptyMessage(
+                                    'Nenhum motivo de trancamento informado.',
+                                  )
+                                else
+                                  ...motivosTrancamento.map(
+                                    (texto) => Padding(
+                                      padding:
+                                          const EdgeInsets.only(bottom: 12),
+                                      child: EvaluationCommentCard(
+                                        texto: texto,
+                                      ),
+                                    ),
+                                  ),
+                                const SizedBox(height: 24),
+                                const Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    'Pontos que mais afligiram',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                if (pontosQueAfligiram.isEmpty)
+                                  _buildEmptyMessage(
+                                    'Nenhum ponto informado.',
+                                  )
+                                else
+                                  ...pontosQueAfligiram.map(
+                                    (texto) => Padding(
+                                      padding:
+                                          const EdgeInsets.only(bottom: 12),
+                                      child: EvaluationCommentCard(
+                                        texto: texto,
+                                      ),
+                                    ),
+                                  ),
                                 const SizedBox(height: 22),
                                 const Align(
                                   alignment: Alignment.centerLeft,
@@ -365,27 +495,8 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage> {
                                 ),
                                 const SizedBox(height: 12),
                                 if (comentarios.isEmpty)
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 18,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(10),
-                                      border:
-                                          Border.all(color: Colors.black12),
-                                    ),
-                                    child: const Text(
-                                      'Ainda não há comentários para esta turma.',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.black54,
-                                        height: 1.4,
-                                      ),
-                                    ),
+                                  _buildEmptyMessage(
+                                    'Ainda não há comentários para esta turma.',
                                   )
                                 else ...[
                                   ...comentariosExibidos.map(

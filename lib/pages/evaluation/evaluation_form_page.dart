@@ -25,19 +25,30 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
   int avaliacaoGeral = 4;
 
   double organizacaoConteudo = 2;
+  double passagemConteudo = 2;
   double quantidadeExercicios = 1;
   double avaliacaoCondizente = 2;
   double relacaoRespeito = 1;
   double professorSolicito = 2;
   double assiduidadeProfessor = 2;
+  double teoriaPratica = 2;
+
+  bool trancouTurma = false;
+  bool acreditaPassar = true;
 
   final TextEditingController comentarioController = TextEditingController();
+  final TextEditingController porqueTrancouController =
+      TextEditingController();
+  final TextEditingController pontoQueAfligiuController =
+      TextEditingController();
 
   bool _carregando = false;
 
   @override
   void dispose() {
     comentarioController.dispose();
+    porqueTrancouController.dispose();
+    pontoQueAfligiuController.dispose();
     super.dispose();
   }
 
@@ -69,11 +80,17 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
         planoAulaAlunoId: widget.planoAulaAlunoId,
         avaliacaoGeral: avaliacaoGeral,
         organizacaoConteudo: organizacaoConteudo.round(),
+        passagemConteudo: passagemConteudo.round(),
         quantidadeExercicios: quantidadeExercicios.round(),
         avaliacaoCondizente: avaliacaoCondizente.round(),
         professorRespeitoso: relacaoRespeito.round(),
         professorSolicito: professorSolicito.round(),
         assiduidadeProfessor: assiduidadeProfessor.round(),
+        teoriaPratica: teoriaPratica.round(),
+        trancouTurma: trancouTurma,
+        porqueTrancou: porqueTrancouController.text.trim(),
+        acreditaPassar: acreditaPassar,
+        pontoQueAfligiu: pontoQueAfligiuController.text.trim(),
         aspectosGerais: comentarioController.text.trim(),
       );
 
@@ -159,6 +176,89 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildQuestionCard({
+    required String titulo,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.black12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            titulo,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.black,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSwitchOption({
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      value: value,
+      onChanged: onChanged,
+      title: Text(
+        value ? 'Sim' : 'Não',
+        style: const TextStyle(
+          fontSize: 14,
+          color: Colors.black87,
+        ),
+      ),
+      activeColor: Colors.black,
+      activeTrackColor: Colors.black26,
+      inactiveThumbColor: Colors.black54,
+      inactiveTrackColor: Colors.black12,
+    );
+  }
+
+  InputDecoration _buildTextFieldDecoration(String hintText) {
+    return InputDecoration(
+      filled: true,
+      fillColor: const Color(0xFFF5F5F5),
+      hintText: hintText,
+      hintStyle: const TextStyle(
+        fontSize: 14,
+        color: Colors.black38,
+      ),
+      contentPadding: const EdgeInsets.all(16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(
+          color: Colors.black12,
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(
+          color: Colors.black12,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(
+          color: Colors.black54,
+        ),
       ),
     );
   }
@@ -249,7 +349,9 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                   child: Column(
                     children: [
                       _buildStarRating(),
-                      const SizedBox(height: 26),
+
+                      const SizedBox(height: 34),
+
                       EvaluationSliderItem(
                         titulo: 'Organização do conteúdo:',
                         valor: organizacaoConteudo,
@@ -260,9 +362,26 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                         },
                         labelEsquerda: 'Ruim',
                         labelCentro: 'Razoável',
-                        labelDireita: 'Boa',
+                        labelDireita: 'Excelente',
                       ),
-                      const SizedBox(height: 26),
+
+                      const SizedBox(height: 34),
+
+                      EvaluationSliderItem(
+                        titulo: 'Didática na passagem do conteúdo:',
+                        valor: passagemConteudo,
+                        onChanged: (value) {
+                          setState(() {
+                            passagemConteudo = value;
+                          });
+                        },
+                        labelEsquerda: 'Ruim',
+                        labelCentro: 'Razoável',
+                        labelDireita: 'Excelente',
+                      ),
+
+                      const SizedBox(height: 34),
+
                       EvaluationSliderItem(
                         titulo: 'Quantidade de exercícios:',
                         valor: quantidadeExercicios,
@@ -275,9 +394,12 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                         labelCentro: 'Razoável',
                         labelDireita: 'Suficiente',
                       ),
-                      const SizedBox(height: 26),
+
+                      const SizedBox(height: 34),
+
                       EvaluationSliderItem(
-                        titulo: 'Avaliação condizente com o conteúdo dado:',
+                        titulo:
+                            'Avaliação condizente com o conteúdo dado:',
                         valor: avaliacaoCondizente,
                         onChanged: (value) {
                           setState(() {
@@ -285,10 +407,12 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                           });
                         },
                         labelEsquerda: 'Não',
-                        labelCentro: 'Média',
+                        labelCentro: 'Razoável',
                         labelDireita: 'Sim',
                       ),
-                      const SizedBox(height: 26),
+
+                      const SizedBox(height: 34),
+
                       EvaluationSliderItem(
                         titulo:
                             'Relação com o(a) professor(a) no quesito respeito:',
@@ -299,10 +423,12 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                           });
                         },
                         labelEsquerda: 'Ruim',
-                        labelCentro: 'Média',
-                        labelDireita: 'Boa',
+                        labelCentro: 'Razoável',
+                        labelDireita: 'Excelente',
                       ),
-                      const SizedBox(height: 26),
+
+                      const SizedBox(height: 34),
+
                       EvaluationSliderItem(
                         titulo: 'Professor(a) foi solícito(a)?',
                         valor: professorSolicito,
@@ -312,10 +438,12 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                           });
                         },
                         labelEsquerda: 'Não',
-                        labelCentro: 'Médio',
+                        labelCentro: 'Razoável',
                         labelDireita: 'Sim',
                       ),
-                      const SizedBox(height: 26),
+
+                      const SizedBox(height: 34),
+
                       EvaluationSliderItem(
                         titulo: 'Assiduidade do(a) professor(a):',
                         valor: assiduidadeProfessor,
@@ -325,55 +453,99 @@ class _EvaluationFormPageState extends State<EvaluationFormPage> {
                           });
                         },
                         labelEsquerda: 'Ruim',
-                        labelCentro: 'Média',
-                        labelDireita: 'Boa',
+                        labelCentro: 'Razoável',
+                        labelDireita: 'Excelente',
                       ),
-                      const SizedBox(height: 30),
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Deixe aqui sua avaliação detalhada, se desejar:',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.black54,
-                            height: 1.4,
+
+                      const SizedBox(height: 34),
+
+                      EvaluationSliderItem(
+                        titulo: 'Equilíbrio entre teoria e prática:',
+                        valor: teoriaPratica,
+                        onChanged: (value) {
+                          setState(() {
+                            teoriaPratica = value;
+                          });
+                        },
+                        labelEsquerda: 'Ruim',
+                        labelCentro: 'Razoável',
+                        labelDireita: 'Excelente',
+                      ),
+
+                      const SizedBox(height: 34),
+
+                      _buildQuestionCard(
+                        titulo: 'Você trancou essa turma?',
+                        child: Column(
+                          children: [
+                            _buildSwitchOption(
+                              value: trancouTurma,
+                              onChanged: (value) {
+                                setState(() {
+                                  trancouTurma = value;
+                                });
+                              },
+                            ),
+                            if (trancouTurma) ...[
+                              const SizedBox(height: 12),
+                              TextFormField(
+                                controller: porqueTrancouController,
+                                minLines: 2,
+                                maxLines: 4,
+                                decoration: _buildTextFieldDecoration(
+                                  'Por que você trancou a turma?',
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 26),
+
+                      _buildQuestionCard(
+                        titulo:
+                            'Você acredita que irá passar nessa disciplina?',
+                        child: _buildSwitchOption(
+                          value: acreditaPassar,
+                          onChanged: (value) {
+                            setState(() {
+                              acreditaPassar = value;
+                            });
+                          },
+                        ),
+                      ),
+
+                      const SizedBox(height: 26),
+
+                      _buildQuestionCard(
+                        titulo:
+                            'Qual ponto mais te afligiu nessa disciplina?',
+                        child: TextFormField(
+                          controller: pontoQueAfligiuController,
+                          minLines: 2,
+                          maxLines: 4,
+                          decoration: _buildTextFieldDecoration(
+                            'Escreva aqui...',
                           ),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: comentarioController,
-                        minLines: 4,
-                        maxLines: 6,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.white,
-                          hintText: 'Escreva aqui...',
-                          hintStyle: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black38,
-                          ),
-                          contentPadding: const EdgeInsets.all(16),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(
-                              color: Colors.black12,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(
-                              color: Colors.black12,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(
-                              color: Colors.black54,
-                            ),
+
+                      const SizedBox(height: 26),
+
+                      _buildQuestionCard(
+                        titulo:
+                            'Deixe aqui sua avaliação detalhada, se desejar:',
+                        child: TextFormField(
+                          controller: comentarioController,
+                          minLines: 4,
+                          maxLines: 6,
+                          decoration: _buildTextFieldDecoration(
+                            'Escreva aqui...',
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 24),
                     ],
                   ),
