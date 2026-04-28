@@ -43,7 +43,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
     if (_senhaController.text != _confirmarSenhaController.text) {
       setState(() {
-        _errorMessage = 'As senhas não conferem.';
+        _errorMessage = 'As senhas não coincidem';
       });
       return;
     }
