@@ -6,7 +6,7 @@ class AuthService {
   final String baseUrl = 'http://localhost:3000'; //Chrome falando com backend no PC
 
   Future<Map<String, dynamic>> login(String email, String senha) async {
-    final url = Uri.parse('$baseUrl/login'); // http://localhost:3000/login
+    final url = Uri.parse('$baseUrl/login');
 
     final response = await http.post(
       url,
@@ -22,10 +22,8 @@ class AuthService {
     final body = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
-      // sucesso – devolve dados do usuário/token/etc
       return body as Map<String, dynamic>;
     } else {
-      // erro – lança exceção com mensagem vinda do backend (se tiver)
       throw Exception(body['error'] ?? 'Erro ao fazer login');
     }
   }
@@ -81,6 +79,70 @@ class AuthService {
                 : null) ??
             body?['message'] ??
             'Erro ao realizar cadastro',
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> forgotPassword(String email) async {
+    final url = Uri.parse('$baseUrl/password/forgot');
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode({
+        'email': email,
+      }),
+    );
+
+    final body = response.body.isNotEmpty ? jsonDecode(response.body) : null;
+
+    if (response.statusCode == 200) {
+      if (body is Map<String, dynamic>) {
+        return body;
+      }
+
+      return {
+        'message': 'Solicitação de recuperação enviada com sucesso',
+      };
+    } else {
+      throw Exception(
+        body?['error'] ??
+            body?['message'] ??
+            'Erro ao solicitar recuperação de senha',
+      );
+    }
+  }
+
+  Future<void> resetPassword({
+    required String token,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    final url = Uri.parse('$baseUrl/password/reset');
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode({
+        'token': token,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      }),
+    );
+
+    final body = response.body.isNotEmpty ? jsonDecode(response.body) : null;
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        body?['error'] ??
+            body?['message'] ??
+            'Erro ao alterar senha',
       );
     }
   }

@@ -12,6 +12,7 @@ class LoginForm extends StatelessWidget {
   final String? errorMessage;
   final VoidCallback onToggleSenhaVisivel;
   final VoidCallback onCloseError;
+  final VoidCallback onForgotPassword;
 
   const LoginForm({
     super.key,
@@ -22,6 +23,7 @@ class LoginForm extends StatelessWidget {
     required this.errorMessage,
     required this.onToggleSenhaVisivel,
     required this.onCloseError,
+    required this.onForgotPassword,
   });
 
   @override
@@ -46,9 +48,7 @@ class LoginForm extends StatelessWidget {
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: () {
-                // TODO: fluxo de recuperação de senha
-              },
+              onPressed: onForgotPassword,
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,
                 minimumSize: Size.zero,

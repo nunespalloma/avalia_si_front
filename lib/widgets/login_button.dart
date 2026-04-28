@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 class LoginButton extends StatelessWidget {
   final bool carregando;
   final VoidCallback onPressed;
+  final String texto;
 
   const LoginButton({
     super.key,
     required this.carregando,
     required this.onPressed,
+    this.texto = 'Entrar',
   });
 
   @override
@@ -34,7 +36,7 @@ class LoginButton extends StatelessWidget {
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
-            : const Text('Entrar'),
+            : Text(texto),
       ),
     );
   }
