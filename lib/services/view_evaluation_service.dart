@@ -6,12 +6,16 @@ class TurmaResultado {
   final String disciplina;
   final String turma;
   final String professor;
+  final String semestre;
+  final double notaEstrelas;
 
   TurmaResultado({
     required this.id,
     required this.disciplina,
     required this.turma,
     required this.professor,
+    required this.semestre,
+    required this.notaEstrelas,
   });
 
   factory TurmaResultado.fromJson(Map<String, dynamic> json) {
@@ -20,6 +24,8 @@ class TurmaResultado {
       disciplina: json['disciplina'] ?? '',
       turma: json['turma'] ?? '',
       professor: json['professor'] ?? '',
+      semestre: json['semestre'] ?? '',
+      notaEstrelas: (json['nota_estrelas'] ?? 0).toDouble(),
     );
   }
 }

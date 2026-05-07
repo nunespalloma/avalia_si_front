@@ -3,6 +3,14 @@ import 'evaluation_dashboard_page.dart';
 import '../../widgets/error_message.dart';
 import '../../services/view_evaluation_service.dart';
 
+enum _OrdenacaoAvaliacoes {
+  nenhuma,
+  avaliacoesCrescente,
+  avaliacoesDecrescente,
+  semestreCrescente,
+  semestreDecrescente,
+}
+
 class ViewEvaluationPage extends StatefulWidget {
   const ViewEvaluationPage({super.key});
 
@@ -13,6 +21,7 @@ class ViewEvaluationPage extends StatefulWidget {
 class _ViewEvaluationPageState extends State<ViewEvaluationPage> {
   final TextEditingController _buscaController = TextEditingController();
   String _termoBusca = '';
+  _OrdenacaoAvaliacoes _ordenacaoSelecionada = _OrdenacaoAvaliacoes.nenhuma;
 
   List<TurmaResultado> _turmasAvaliadas = [];
   bool _carregando = true;
@@ -77,18 +86,52 @@ class _ViewEvaluationPageState extends State<ViewEvaluationPage> {
     Navigator.pop(context);
   }
 
+  double _valorSemestre(TurmaResultado item) {
+    return double.tryParse(item.semestre) ?? 0;
+  }
+
   List<TurmaResultado> get _turmasFiltradas {
+    List<TurmaResultado> resultado;
+
     if (_termoBusca.trim().isEmpty) {
-      return _turmasAvaliadas;
+      resultado = List.from(_turmasAvaliadas);
+    } else {
+      final busca = _termoBusca.toLowerCase();
+
+      resultado = _turmasAvaliadas.where((item) {
+        return item.disciplina.toLowerCase().contains(busca) ||
+            item.turma.toLowerCase().contains(busca) ||
+            item.professor.toLowerCase().contains(busca) ||
+            item.semestre.toLowerCase().contains(busca);
+      }).toList();
     }
 
-    final busca = _termoBusca.toLowerCase();
+    switch (_ordenacaoSelecionada) {
+      case _OrdenacaoAvaliacoes.avaliacoesCrescente:
+        resultado.sort(
+          (a, b) => a.notaEstrelas.compareTo(b.notaEstrelas),
+        );
+        break;
+      case _OrdenacaoAvaliacoes.avaliacoesDecrescente:
+        resultado.sort(
+          (a, b) => b.notaEstrelas.compareTo(a.notaEstrelas),
+        );
+        break;
+      case _OrdenacaoAvaliacoes.semestreCrescente:
+        resultado.sort(
+          (a, b) => _valorSemestre(a).compareTo(_valorSemestre(b)),
+        );
+        break;
+      case _OrdenacaoAvaliacoes.semestreDecrescente:
+        resultado.sort(
+          (a, b) => _valorSemestre(b).compareTo(_valorSemestre(a)),
+        );
+        break;
+      case _OrdenacaoAvaliacoes.nenhuma:
+        break;
+    }
 
-    return _turmasAvaliadas.where((item) {
-      return item.disciplina.toLowerCase().contains(busca) ||
-          item.turma.toLowerCase().contains(busca) ||
-          item.professor.toLowerCase().contains(busca);
-    }).toList();
+    return resultado;
   }
 
   @override
@@ -147,7 +190,7 @@ class _ViewEvaluationPageState extends State<ViewEvaluationPage> {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Colors.white,
-                  hintText: 'Buscar disciplina, turma ou professor',
+                  hintText: 'Buscar disciplina, turma, professor ou semestre',
                   hintStyle: const TextStyle(
                     fontSize: 12,
                     color: Colors.black38,
@@ -195,6 +238,70 @@ class _ViewEvaluationPageState extends State<ViewEvaluationPage> {
                     ),
                   ),
                 ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<_OrdenacaoAvaliacoes>(
+                value: _ordenacaoSelecionada,
+                onChanged: (value) {
+                  if (value == null) return;
+
+                  setState(() {
+                    _ordenacaoSelecionada = value;
+                  });
+                },
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: Colors.black12,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: Colors.black12,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.black,
+                ),
+                dropdownColor: Colors.white,
+                items: const [
+                  DropdownMenuItem(
+                    value: _OrdenacaoAvaliacoes.nenhuma,
+                    child: Text('Ordenar por'),
+                  ),
+                  DropdownMenuItem(
+                    value: _OrdenacaoAvaliacoes.avaliacoesCrescente,
+                    child: Text('Avaliações ↑'),
+                  ),
+                  DropdownMenuItem(
+                    value: _OrdenacaoAvaliacoes.avaliacoesDecrescente,
+                    child: Text('Avaliações ↓'),
+                  ),
+                  DropdownMenuItem(
+                    value: _OrdenacaoAvaliacoes.semestreCrescente,
+                    child: Text('Semestre ↑'),
+                  ),
+                  DropdownMenuItem(
+                    value: _OrdenacaoAvaliacoes.semestreDecrescente,
+                    child: Text('Semestre ↓'),
+                  ),
+                ],
               ),
               const SizedBox(height: 20),
               Expanded(
@@ -287,10 +394,11 @@ class _ViewEvaluationPageState extends State<ViewEvaluationPage> {
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
           child: Text(
-            '${item.turma} - ${item.professor}',
+            '${item.turma} - ${item.professor}\nSemestre: ${item.semestre} \nAvaliação: ${item.notaEstrelas.toStringAsFixed(1)}',
             style: const TextStyle(
               fontSize: 13,
               color: Colors.black54,
+              height: 1.4,
             ),
           ),
         ),
