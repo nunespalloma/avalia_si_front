@@ -278,11 +278,6 @@ class _HomePageState extends State<HomePage> {
                               texto: 'Cadastros',
                               onPressed: _abrirTelaCadastrosIniciais,
                             ),
-                            const SizedBox(height: 14),
-                            _buildBotaoPrincipal(
-                              texto: 'Montar turmas',
-                              onPressed: _abrirTelaCadastrarProfessorNasTurmas,
-                            ),
                           ],
                         ),
                         const SizedBox(height: 50),
@@ -299,11 +294,6 @@ class _HomePageState extends State<HomePage> {
                             _buildBotaoPrincipal(
                               texto: 'Importar planos de aula dos alunos',
                               onPressed: _abrirTelaImportarCsv,
-                            ),
-                            const SizedBox(height: 14),
-                            _buildBotaoPrincipal(
-                              texto: 'Montar turmas',
-                              onPressed: _abrirTelaCadastrarProfessorNasTurmas,
                             ),
                           ],
                         ),

@@ -3,6 +3,7 @@ import '../../widgets/success_popup.dart';
 import '../../widgets/confirm_delete_popup.dart';
 import '../../widgets/error_message.dart';
 import '../../services/cadastros_base_service.dart';
+import '../../services/turmas_service.dart';
 
 class SelectCadastrosBasePage extends StatefulWidget {
   const SelectCadastrosBasePage({super.key});
@@ -14,8 +15,11 @@ class SelectCadastrosBasePage extends StatefulWidget {
 
 class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
   List<CadastroBaseItem> _itens = [];
+  List<TurmaProfessorItem> _turmas = [];
 
   TipoCadastro _tipoSelecionado = TipoCadastro.disciplina;
+  bool _abaTurmasSelecionada = false;
+
   String _pesquisa = '';
   int? _idEmEdicao;
   bool _adicionandoNovo = false;
@@ -29,6 +33,15 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
   final TextEditingController _codigoController = TextEditingController();
   final TextEditingController _anoController = TextEditingController();
   final TextEditingController _periodoController = TextEditingController();
+  final TextEditingController _turmaController = TextEditingController();
+
+  int? _disciplinaSelecionadaId;
+  int? _professorSelecionadoId;
+  int? _semestreSelecionadoId;
+
+  List<OpcaoCadastro> _disciplinas = [];
+  List<OpcaoCadastro> _professores = [];
+  List<OpcaoCadastro> _semestres = [];
 
   @override
   void initState() {
@@ -42,6 +55,7 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
     _codigoController.dispose();
     _anoController.dispose();
     _periodoController.dispose();
+    _turmaController.dispose();
     super.dispose();
   }
 
@@ -51,13 +65,31 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
     });
 
     try {
-      final itens = await CadastrosBaseService.listar(_tipoSelecionado);
+      if (_abaTurmasSelecionada) {
+        final results = await Future.wait([
+          TurmasService.listarTurmas(),
+          TurmasService.listarDisciplinas(),
+          TurmasService.listarProfessores(),
+          TurmasService.listarSemestres(),
+        ]);
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      setState(() {
-        _itens = itens;
-      });
+        setState(() {
+          _turmas = results[0] as List<TurmaProfessorItem>;
+          _disciplinas = results[1] as List<OpcaoCadastro>;
+          _professores = results[2] as List<OpcaoCadastro>;
+          _semestres = results[3] as List<OpcaoCadastro>;
+        });
+      } else {
+        final itens = await CadastrosBaseService.listar(_tipoSelecionado);
+
+        if (!mounted) return;
+
+        setState(() {
+          _itens = itens;
+        });
+      }
     } catch (e) {
       if (!mounted) return;
       _agendarAviso(e.toString().replaceFirst('Exception: ', ''), erro: true);
@@ -100,6 +132,10 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
   }
 
   String _hintPesquisa(TipoCadastro tipo) {
+    if (_abaTurmasSelecionada) {
+      return 'Pesquisar disciplina, turma, professor ou semestre';
+    }
+
     switch (tipo) {
       case TipoCadastro.disciplina:
         return 'Pesquisar disciplina ou código';
@@ -128,16 +164,48 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
     }).toList();
   }
 
+  List<TurmaProfessorItem> get _turmasFiltradas {
+    final termo = _pesquisa.toLowerCase().trim();
+
+    if (termo.isEmpty) return _turmas;
+
+    return _turmas.where((item) {
+      return item.disciplina.toLowerCase().contains(termo) ||
+          item.turma.toLowerCase().contains(termo) ||
+          item.professor.toLowerCase().contains(termo) ||
+          item.semestre.toLowerCase().contains(termo);
+    }).toList();
+  }
+
+  void _limparEdicao() {
+    _idEmEdicao = null;
+    _adicionandoNovo = false;
+    _nomeController.clear();
+    _codigoController.clear();
+    _anoController.clear();
+    _periodoController.clear();
+    _turmaController.clear();
+    _disciplinaSelecionadaId = null;
+    _professorSelecionadoId = null;
+    _semestreSelecionadoId = null;
+  }
+
   void _trocarTipo(TipoCadastro tipo) {
     setState(() {
+      _abaTurmasSelecionada = false;
       _tipoSelecionado = tipo;
       _pesquisa = '';
-      _idEmEdicao = null;
-      _adicionandoNovo = false;
-      _nomeController.clear();
-      _codigoController.clear();
-      _anoController.clear();
-      _periodoController.clear();
+      _limparEdicao();
+    });
+
+    _carregarItens();
+  }
+
+  void _trocarParaTurmas() {
+    setState(() {
+      _abaTurmasSelecionada = true;
+      _pesquisa = '';
+      _limparEdicao();
     });
 
     _carregarItens();
@@ -154,6 +222,17 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
     });
   }
 
+  void _iniciarEdicaoTurma(TurmaProfessorItem item) {
+    setState(() {
+      _adicionandoNovo = false;
+      _idEmEdicao = item.id;
+      _disciplinaSelecionadaId = item.disciplinaId;
+      _turmaController.text = item.turma;
+      _professorSelecionadoId = item.professorId;
+      _semestreSelecionadoId = item.semestreId;
+    });
+  }
+
   void _iniciarNovoCadastro() {
     setState(() {
       _idEmEdicao = null;
@@ -162,17 +241,16 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
       _codigoController.clear();
       _anoController.clear();
       _periodoController.clear();
+      _turmaController.clear();
+      _disciplinaSelecionadaId = null;
+      _professorSelecionadoId = null;
+      _semestreSelecionadoId = null;
     });
   }
 
   void _cancelarEdicao() {
     setState(() {
-      _idEmEdicao = null;
-      _adicionandoNovo = false;
-      _nomeController.clear();
-      _codigoController.clear();
-      _anoController.clear();
-      _periodoController.clear();
+      _limparEdicao();
     });
   }
 
@@ -225,11 +303,43 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
       if (!mounted) return;
 
       setState(() {
-        _idEmEdicao = null;
-        _nomeController.clear();
-        _codigoController.clear();
-        _anoController.clear();
-        _periodoController.clear();
+        _limparEdicao();
+      });
+
+      await _carregarItens();
+      _agendarAviso(mensagem);
+    } catch (e) {
+      if (!mounted) return;
+      _agendarAviso(e.toString().replaceFirst('Exception: ', ''), erro: true);
+    }
+  }
+
+  Future<void> _salvarEdicaoTurma(TurmaProfessorItem item) async {
+    final turma = _turmaController.text.trim();
+
+    if (_disciplinaSelecionadaId == null ||
+        turma.isEmpty ||
+        _semestreSelecionadoId == null) {
+      _agendarAviso(
+        'Preencha disciplina, turma e semestre.',
+        erro: true,
+      );
+      return;
+    }
+
+    try {
+      final mensagem = await TurmasService.atualizarTurma(
+        id: item.id,
+        nome: turma,
+        disciplinaId: _disciplinaSelecionadaId!,
+        professorId: _professorSelecionadoId,
+        semestreId: _semestreSelecionadoId!,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _limparEdicao();
       });
 
       await _carregarItens();
@@ -241,6 +351,11 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
   }
 
   Future<void> _salvarNovoCadastro() async {
+    if (_abaTurmasSelecionada) {
+      await _salvarNovaTurma();
+      return;
+    }
+
     try {
       String mensagem;
 
@@ -286,11 +401,42 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
       if (!mounted) return;
 
       setState(() {
-        _adicionandoNovo = false;
-        _nomeController.clear();
-        _codigoController.clear();
-        _anoController.clear();
-        _periodoController.clear();
+        _limparEdicao();
+      });
+
+      await _carregarItens();
+      _agendarAviso(mensagem);
+    } catch (e) {
+      if (!mounted) return;
+      _agendarAviso(e.toString().replaceFirst('Exception: ', ''), erro: true);
+    }
+  }
+
+  Future<void> _salvarNovaTurma() async {
+    final turma = _turmaController.text.trim();
+
+    if (_disciplinaSelecionadaId == null ||
+        turma.isEmpty ||
+        _semestreSelecionadoId == null) {
+      _agendarAviso(
+        'Preencha disciplina, turma e semestre.',
+        erro: true,
+      );
+      return;
+    }
+
+    try {
+      final mensagem = await TurmasService.criarTurma(
+        nome: turma,
+        disciplinaId: _disciplinaSelecionadaId!,
+        professorId: _professorSelecionadoId,
+        semestreId: _semestreSelecionadoId!,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _limparEdicao();
       });
 
       await _carregarItens();
@@ -339,16 +485,42 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
 
           setState(() {
             if (_idEmEdicao == item.id) {
-              _idEmEdicao = null;
-              _nomeController.clear();
-              _codigoController.clear();
-              _anoController.clear();
-              _periodoController.clear();
+              _limparEdicao();
             }
           });
 
           await _carregarItens();
           _agendarAviso(mensagemRetorno);
+        } catch (e) {
+          if (!mounted) return;
+          _agendarAviso(
+            e.toString().replaceFirst('Exception: ', ''),
+            erro: true,
+          );
+        }
+      },
+    );
+  }
+
+  void _excluirTurma(TurmaProfessorItem item) {
+    showDeletePopup(
+      context,
+      title: 'Excluir turma',
+      message: 'Tem certeza que deseja excluir esta turma?',
+      onConfirm: () async {
+        try {
+          final mensagem = await TurmasService.excluirTurma(item.id);
+
+          if (!mounted) return;
+
+          setState(() {
+            if (_idEmEdicao == item.id) {
+              _limparEdicao();
+            }
+          });
+
+          await _carregarItens();
+          _agendarAviso(mensagem);
         } catch (e) {
           if (!mounted) return;
           _agendarAviso(
@@ -391,6 +563,62 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
           borderSide: const BorderSide(color: Colors.black54),
         ),
       ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String hint,
+    required int? value,
+    required List<OpcaoCadastro> items,
+    required ValueChanged<int?> onChanged,
+  }) {
+    final ids = items.map((e) => e.id).toList();
+    final valorValido = value != null && ids.contains(value) ? value : null;
+
+    return DropdownButtonFormField<int>(
+      value: valorValido,
+      isExpanded: true,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(
+          fontSize: 12,
+          color: Colors.black38,
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.black12),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.black12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.black54),
+        ),
+      ),
+      items: items
+          .map(
+            (item) => DropdownMenuItem<int>(
+              value: item.id,
+              child: Text(
+                item.nome,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          )
+          .toList(),
+      onChanged: onChanged,
     );
   }
 
@@ -535,6 +763,106 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
     );
   }
 
+  Widget _buildCardVisualizacaoTurma(TurmaProfessorItem item) {
+    final semProfessor = item.professor.trim().isEmpty;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.black12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            item.disciplina,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Turma: ${item.turma}',
+            style: const TextStyle(
+              fontSize: 13,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            semProfessor
+                ? 'Professor: Não cadastrado'
+                : 'Professor: ${item.professor}',
+            style: TextStyle(
+              fontSize: 13,
+              color: semProfessor ? Colors.black54 : Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Semestre: ${item.semestre}',
+            style: const TextStyle(
+              fontSize: 13,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _iniciarEdicaoTurma(item),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  child: const Text(
+                    'Editar',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _excluirTurma(item),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.black,
+                    side: const BorderSide(color: Colors.black26),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  child: const Text(
+                    'Excluir',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCardEdicao({CadastroBaseItem? item}) {
     final bool isNovo = item == null;
 
@@ -641,6 +969,122 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
     );
   }
 
+  Widget _buildCardEdicaoTurma({TurmaProfessorItem? item}) {
+    final bool isNovo = item == null;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.black12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            isNovo ? 'Novo registro' : 'Editar registro',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildDropdown(
+            hint: 'Disciplina',
+            value: _disciplinaSelecionadaId,
+            items: _disciplinas,
+            onChanged: (value) {
+              setState(() {
+                _disciplinaSelecionadaId = value;
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildCampo(
+            controller: _turmaController,
+            hint: 'Turma',
+          ),
+          const SizedBox(height: 12),
+          _buildDropdown(
+            hint: 'Professor',
+            value: _professorSelecionadoId,
+            items: _professores,
+            onChanged: (value) {
+              setState(() {
+                _professorSelecionadoId = value;
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildDropdown(
+            hint: 'Semestre',
+            value: _semestreSelecionadoId,
+            items: _semestres,
+            onChanged: (value) {
+              setState(() {
+                _semestreSelecionadoId = value;
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _carregando
+                      ? null
+                      : isNovo
+                          ? _salvarNovoCadastro
+                          : () => _salvarEdicaoTurma(item),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  child: Text(
+                    isNovo ? 'Adicionar' : 'Salvar',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _cancelarEdicao,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.black,
+                    side: const BorderSide(color: Colors.black26),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  child: const Text(
+                    'Cancelar',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_mensagemJaExibida && _mensagemPendente != null && !_erroAtual) {
@@ -661,6 +1105,7 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
     }
 
     final itensFiltrados = _itensFiltrados;
+    final turmasFiltradas = _turmasFiltradas;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -685,7 +1130,7 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
               const SizedBox(height: 20),
               const Center(
                 child: Text(
-                  'Gerenciar disciplinas,\nprofessores e semestres',
+                  'Gerenciar cadastros',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 30,
@@ -699,23 +1144,30 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
               Row(
                 children: [
                   _buildTipoButton(
-                    label: 'Disciplinas',
-                    selecionado:
+                    label: 'Disciplina',
+                    selecionado: !_abaTurmasSelecionada &&
                         _tipoSelecionado == TipoCadastro.disciplina,
                     onTap: () => _trocarTipo(TipoCadastro.disciplina),
                   ),
                   const SizedBox(width: 8),
                   _buildTipoButton(
-                    label: 'Professores',
-                    selecionado:
+                    label: 'Professor',
+                    selecionado: !_abaTurmasSelecionada &&
                         _tipoSelecionado == TipoCadastro.professor,
                     onTap: () => _trocarTipo(TipoCadastro.professor),
                   ),
                   const SizedBox(width: 8),
                   _buildTipoButton(
-                    label: 'Semestres',
-                    selecionado: _tipoSelecionado == TipoCadastro.semestre,
+                    label: 'Semestre',
+                    selecionado: !_abaTurmasSelecionada &&
+                        _tipoSelecionado == TipoCadastro.semestre,
                     onTap: () => _trocarTipo(TipoCadastro.semestre),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildTipoButton(
+                    label: 'Turma',
+                    selecionado: _abaTurmasSelecionada,
+                    onTap: _trocarParaTurmas,
                   ),
                 ],
               ),
@@ -757,8 +1209,9 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed:
-                      (_adicionandoNovo || _carregando) ? null : _iniciarNovoCadastro,
+                  onPressed: (_adicionandoNovo || _carregando)
+                      ? null
+                      : _iniciarNovoCadastro,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     foregroundColor: Colors.white,
@@ -769,7 +1222,9 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
                     ),
                   ),
                   child: Text(
-                    'Adicionar ${_tituloTipo(_tipoSelecionado)}',
+                    _abaTurmasSelecionada
+                        ? 'Adicionar turma'
+                        : 'Adicionar ${_tituloTipo(_tipoSelecionado)}',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
@@ -793,36 +1248,67 @@ class _SelectCadastrosBasePageState extends State<SelectCadastrosBasePage> {
               Expanded(
                 child: _carregando
                     ? const Center(child: CircularProgressIndicator())
-                    : itensFiltrados.isEmpty && !_adicionandoNovo
-                        ? Center(
-                            child: Text(
-                              'Nenhum ${_tituloTipoPlural(_tipoSelecionado)} encontrado.',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.black54,
+                    : _abaTurmasSelecionada
+                        ? turmasFiltradas.isEmpty && !_adicionandoNovo
+                            ? const Center(
+                                child: Text(
+                                  'Nenhum registro encontrado.',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              )
+                            : ListView.separated(
+                                itemCount: turmasFiltradas.length +
+                                    (_adicionandoNovo ? 1 : 0),
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 14),
+                                itemBuilder: (context, index) {
+                                  if (_adicionandoNovo && index == 0) {
+                                    return _buildCardEdicaoTurma();
+                                  }
+
+                                  final item = turmasFiltradas[
+                                      _adicionandoNovo ? index - 1 : index];
+
+                                  if (_idEmEdicao == item.id) {
+                                    return _buildCardEdicaoTurma(item: item);
+                                  }
+
+                                  return _buildCardVisualizacaoTurma(item);
+                                },
+                              )
+                        : itensFiltrados.isEmpty && !_adicionandoNovo
+                            ? Center(
+                                child: Text(
+                                  'Nenhum ${_tituloTipoPlural(_tipoSelecionado)} encontrado.',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              )
+                            : ListView.separated(
+                                itemCount: itensFiltrados.length +
+                                    (_adicionandoNovo ? 1 : 0),
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 14),
+                                itemBuilder: (context, index) {
+                                  if (_adicionandoNovo && index == 0) {
+                                    return _buildCardEdicao();
+                                  }
+
+                                  final item = itensFiltrados[
+                                      _adicionandoNovo ? index - 1 : index];
+
+                                  if (_idEmEdicao == item.id) {
+                                    return _buildCardEdicao(item: item);
+                                  }
+
+                                  return _buildCardVisualizacao(item);
+                                },
                               ),
-                            ),
-                          )
-                        : ListView.separated(
-                            itemCount:
-                                itensFiltrados.length + (_adicionandoNovo ? 1 : 0),
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 14),
-                            itemBuilder: (context, index) {
-                              if (_adicionandoNovo && index == 0) {
-                                return _buildCardEdicao();
-                              }
-
-                              final item = itensFiltrados[
-                                  _adicionandoNovo ? index - 1 : index];
-
-                              if (_idEmEdicao == item.id) {
-                                return _buildCardEdicao(item: item);
-                              }
-
-                              return _buildCardVisualizacao(item);
-                            },
-                          ),
               ),
             ],
           ),
