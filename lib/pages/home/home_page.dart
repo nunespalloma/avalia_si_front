@@ -5,7 +5,6 @@ import '../welcome/welcome_page.dart';
 import '../evaluation/provide_evaluation_page.dart';
 import '../evaluation/view_evaluation_page.dart';
 import '../coordenacao/import_csv_page.dart';
-import '../coordenacao/review_disciplina_turma_professor_page.dart';
 import '../coordenacao/select_cadastros_base_page.dart';
 import '../../services/provide_evaluation_service.dart';
 
@@ -52,9 +51,7 @@ class _HomePageState extends State<HomePage> {
         _jaAvaliouUltimoSemestre =
             turmas.isNotEmpty && turmas.every((item) => item.avaliada);
       });
-    } catch (_) {
-      // Mantém o estado atual caso não consiga carregar.
-    }
+    } catch (_) {}
   }
 
   @override
@@ -118,15 +115,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _abrirTelaCadastrarProfessorNasTurmas() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const SelectTurmaProfessorPage(),
-      ),
-    );
-  }
-
   void _abrirTelaCadastrosIniciais() {
     Navigator.push(
       context,
@@ -161,46 +149,6 @@ class _HomePageState extends State<HomePage> {
           ),
           textAlign: TextAlign.center,
         ),
-      ),
-    );
-  }
-
-  Widget _buildSecaoCoordenacao({
-    required String titulo,
-    required String descricao,
-    required List<Widget> children,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            titulo,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            descricao,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w400,
-              color: Colors.black38,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...children,
-        ],
       ),
     );
   }
@@ -243,70 +191,64 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                 ),
-                const SizedBox(height: 70),
-                const Text(
-                  'Olá,',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 1,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'siga as instruções conforme indicado abaixo.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 60),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        _buildSecaoCoordenacao(
-                          titulo: 'Ações iniciais',
-                          descricao:
-                              '1. Cadastrar disciplinas, professores e semestres.\n2. Montar turmas.',
-                          children: [
-                            _buildBotaoPrincipal(
-                              texto: 'Cadastros',
-                              onPressed: _abrirTelaCadastrosIniciais,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 50),
-                        _buildSecaoCoordenacao(
-                          titulo: 'Ações de todo semestre',
-                          descricao:
-                              '1. Cadastrar o novo semestre.\n2. Importar planos de aula dos alunos.\n3. Montar turmas.',
-                          children: [
-                            _buildBotaoPrincipal(
-                              texto: 'Cadastros',
-                              onPressed: _abrirTelaCadastrosIniciais,
-                            ),
-                            const SizedBox(height: 14),
-                            _buildBotaoPrincipal(
-                              texto: 'Importar planos de aula dos alunos',
-                              onPressed: _abrirTelaImportarCsv,
-                            ),
-                          ],
-                        ),
-                      ],
+
+                const Spacer(),
+
+                Column(
+                  children: const [
+                    Text(
+                      'Olá,',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 1,
+                        color: Colors.black,
+                      ),
                     ),
-                  ),
+                    SizedBox(height: 8),
+                    Text(
+                      'gerencie os cadastros e importe os planos de aula ou verifique as avaliações existentes.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
                 ),
+
+                const Spacer(),
+
+                Column(
+                  children: [
+                    _buildBotaoPrincipal(
+                      texto: 'Gerenciar Cadastros',
+                      onPressed: _abrirTelaCadastrosIniciais,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildBotaoPrincipal(
+                      texto: 'Importar planos de aula dos alunos',
+                      onPressed: _abrirTelaImportarCsv,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildBotaoPrincipal(
+                      texto: 'Ver Avaliações',
+                      onPressed: _abrirTelaAvaliacoes,
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
               ],
             ),
           ),
         ),
       );
     }
+
+    // 👇 resto do arquivo NÃO alterado
 
     final String titulo = _jaAvaliouUltimoSemestre ? 'Parabéns,' : 'Poxa,';
 
