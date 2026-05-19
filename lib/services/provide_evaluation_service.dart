@@ -6,6 +6,7 @@ class TurmaAvaliacao {
   final String disciplina;
   final String turma;
   final String semestre;
+  final String professor;
   bool avaliada;
 
   TurmaAvaliacao({
@@ -13,6 +14,7 @@ class TurmaAvaliacao {
     required this.disciplina,
     required this.turma,
     required this.semestre,
+    required this.professor,
     required this.avaliada,
   });
 
@@ -22,6 +24,7 @@ class TurmaAvaliacao {
       disciplina: json['disciplina'] ?? '',
       turma: json['turma'] ?? '',
       semestre: json['semestre'] ?? '',
+      professor: json['professor'] ?? '',
       avaliada: json['avaliada'] == true,
     );
   }
@@ -30,11 +33,14 @@ class TurmaAvaliacao {
 class ProvideEvaluationService {
   static const String baseUrl = 'http://localhost:3000';
 
-  static Future<List<TurmaAvaliacao>> listarTurmasParaAvaliacao({
+  static Future<List<TurmaAvaliacao>>
+      listarTurmasParaAvaliacao({
     required int alunoId,
   }) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/alunos/$alunoId/avaliacoes_disponiveis'),
+      Uri.parse(
+        '$baseUrl/alunos/$alunoId/avaliacoes_disponiveis',
+      ),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -42,10 +48,18 @@ class ProvideEvaluationService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Não foi possível carregar as turmas para avaliação.');
+      throw Exception(
+        'Não foi possível carregar as turmas para avaliação.',
+      );
     }
 
     final List body = jsonDecode(response.body);
-    return body.map((item) => TurmaAvaliacao.fromJson(item)).toList();
+
+    return body
+        .map(
+          (item) =>
+              TurmaAvaliacao.fromJson(item),
+        )
+        .toList();
   }
 }

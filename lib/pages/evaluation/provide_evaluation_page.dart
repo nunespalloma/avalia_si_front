@@ -367,7 +367,7 @@ class _ProvideEvaluationPageState
                     height: 4,
                   ),
                   Text(
-                    '${item.turma} • ${item.semestre}',
+                    '${item.turma} • ${item.semestre} • ${item.professor}',
                     softWrap: true,
                     style:
                         const TextStyle(
@@ -468,7 +468,7 @@ class _ProvideEvaluationPageState
                     height: 4,
                   ),
                   Text(
-                    '${item.turma} • ${item.semestre}',
+                    '${item.turma} • ${item.semestre} • ${item.professor}',
                     softWrap: true,
                     style:
                         const TextStyle(
